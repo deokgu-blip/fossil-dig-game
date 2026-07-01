@@ -118,5 +118,1685 @@
     "source": "https://poly.pizza/m/vFFblhnHtb",
     "author": "Quaternius",
     "sizeKB": 106
+  },
+  {
+    "objKey": "apple",
+    "file": "assets/models/apple.glb",
+    "rarity": "common",
+    "displayNameKo": "사과",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "banana",
+    "file": "assets/models/banana.glb",
+    "rarity": "common",
+    "displayNameKo": "바나나",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "orange",
+    "file": "assets/models/orange.glb",
+    "rarity": "common",
+    "displayNameKo": "오렌지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "strawberry",
+    "file": "assets/models/strawberry.glb",
+    "rarity": "common",
+    "displayNameKo": "딸기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "watermelon",
+    "file": "assets/models/watermelon.glb",
+    "rarity": "common",
+    "displayNameKo": "수박",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 41
+  },
+  {
+    "objKey": "pineapple",
+    "file": "assets/models/pineapple.glb",
+    "rarity": "common",
+    "displayNameKo": "파인애플",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "pear",
+    "file": "assets/models/pear.glb",
+    "rarity": "common",
+    "displayNameKo": "배",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "lemon",
+    "file": "assets/models/lemon.glb",
+    "rarity": "common",
+    "displayNameKo": "레몬",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "cherries",
+    "file": "assets/models/cherries.glb",
+    "rarity": "common",
+    "displayNameKo": "체리",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "grapes",
+    "file": "assets/models/grapes.glb",
+    "rarity": "common",
+    "displayNameKo": "포도",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 19
+  },
+  {
+    "objKey": "carrot",
+    "file": "assets/models/carrot.glb",
+    "rarity": "common",
+    "displayNameKo": "당근",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "broccoli",
+    "file": "assets/models/broccoli.glb",
+    "rarity": "common",
+    "displayNameKo": "브로콜리",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "corn_cob",
+    "file": "assets/models/corn_cob.glb",
+    "rarity": "common",
+    "displayNameKo": "옥수수",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "tomato",
+    "file": "assets/models/tomato.glb",
+    "rarity": "common",
+    "displayNameKo": "토마토",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "eggplant",
+    "file": "assets/models/eggplant.glb",
+    "rarity": "common",
+    "displayNameKo": "가지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "mushroom",
+    "file": "assets/models/mushroom.glb",
+    "rarity": "common",
+    "displayNameKo": "버섯",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "pumpkin",
+    "file": "assets/models/pumpkin.glb",
+    "rarity": "common",
+    "displayNameKo": "호박",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "bread",
+    "file": "assets/models/bread.glb",
+    "rarity": "common",
+    "displayNameKo": "빵",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "croissant",
+    "file": "assets/models/croissant.glb",
+    "rarity": "common",
+    "displayNameKo": "크루아상",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "donut",
+    "file": "assets/models/donut.glb",
+    "rarity": "common",
+    "displayNameKo": "도넛",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "cupcake",
+    "file": "assets/models/cupcake.glb",
+    "rarity": "common",
+    "displayNameKo": "컵케이크",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "cookie",
+    "file": "assets/models/cookie.glb",
+    "rarity": "common",
+    "displayNameKo": "쿠키",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "birthday_cake",
+    "file": "assets/models/birthday_cake.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "생일케이크",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 34
+  },
+  {
+    "objKey": "pizza",
+    "file": "assets/models/pizza.glb",
+    "rarity": "common",
+    "displayNameKo": "피자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 37
+  },
+  {
+    "objKey": "burger",
+    "file": "assets/models/burger.glb",
+    "rarity": "common",
+    "displayNameKo": "햄버거",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "hot_dog",
+    "file": "assets/models/hot_dog.glb",
+    "rarity": "common",
+    "displayNameKo": "핫도그",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "taco",
+    "file": "assets/models/taco.glb",
+    "rarity": "common",
+    "displayNameKo": "타코",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "fries",
+    "file": "assets/models/fries.glb",
+    "rarity": "common",
+    "displayNameKo": "감자튀김",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 28
+  },
+  {
+    "objKey": "sandwich",
+    "file": "assets/models/sandwich.glb",
+    "rarity": "common",
+    "displayNameKo": "샌드위치",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "sushi_salmon",
+    "file": "assets/models/sushi_salmon.glb",
+    "rarity": "common",
+    "displayNameKo": "연어초밥",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "ice_cream",
+    "file": "assets/models/ice_cream.glb",
+    "rarity": "common",
+    "displayNameKo": "아이스크림",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "cheese",
+    "file": "assets/models/cheese.glb",
+    "rarity": "common",
+    "displayNameKo": "치즈",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "egg",
+    "file": "assets/models/egg.glb",
+    "rarity": "common",
+    "displayNameKo": "달걀",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "fish_food",
+    "file": "assets/models/fish_food.glb",
+    "rarity": "common",
+    "displayNameKo": "생선",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "turkey",
+    "file": "assets/models/turkey.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "칠면조구이",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 13
+  },
+  {
+    "objKey": "cocktail",
+    "file": "assets/models/cocktail.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "칵테일",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "wine_bottle",
+    "file": "assets/models/wine_bottle.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "와인병",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "frying_pan",
+    "file": "assets/models/frying_pan.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "프라이팬",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "cooking_pot",
+    "file": "assets/models/cooking_pot.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "냄비",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "knife_block",
+    "file": "assets/models/knife_block.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "칼블록",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "rolling_pin",
+    "file": "assets/models/rolling_pin.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "밀대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "mortar_pestle",
+    "file": "assets/models/mortar_pestle.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "절구",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/food-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "chair",
+    "file": "assets/models/chair.glb",
+    "rarity": "common",
+    "displayNameKo": "의자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "table",
+    "file": "assets/models/table.glb",
+    "rarity": "common",
+    "displayNameKo": "탁자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "bar_stool",
+    "file": "assets/models/bar_stool.glb",
+    "rarity": "common",
+    "displayNameKo": "바스툴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "bench_furniture",
+    "file": "assets/models/bench_furniture.glb",
+    "rarity": "common",
+    "displayNameKo": "벤치",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "single_bed",
+    "file": "assets/models/single_bed.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "싱글침대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "sofa",
+    "file": "assets/models/sofa.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "소파",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "bookcase",
+    "file": "assets/models/bookcase.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "책장",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "books",
+    "file": "assets/models/books.glb",
+    "rarity": "common",
+    "displayNameKo": "책",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "potted_plant",
+    "file": "assets/models/potted_plant.glb",
+    "rarity": "common",
+    "displayNameKo": "화분",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "small_plant",
+    "file": "assets/models/small_plant.glb",
+    "rarity": "common",
+    "displayNameKo": "작은화분",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "pillow",
+    "file": "assets/models/pillow.glb",
+    "rarity": "common",
+    "displayNameKo": "베개",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 3
+  },
+  {
+    "objKey": "trash_can",
+    "file": "assets/models/trash_can.glb",
+    "rarity": "common",
+    "displayNameKo": "쓰레기통",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "toilet",
+    "file": "assets/models/toilet.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "변기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "bathtub",
+    "file": "assets/models/bathtub.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "욕조",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 15
+  },
+  {
+    "objKey": "kitchen_sink",
+    "file": "assets/models/kitchen_sink.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "싱크대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "stove",
+    "file": "assets/models/stove.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "가스레인지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 32
+  },
+  {
+    "objKey": "fridge",
+    "file": "assets/models/fridge.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "냉장고",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "microwave",
+    "file": "assets/models/microwave.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "전자레인지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "toaster",
+    "file": "assets/models/toaster.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "토스터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "blender",
+    "file": "assets/models/blender.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "믹서기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "coffee_machine",
+    "file": "assets/models/coffee_machine.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "커피머신",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "washing_machine",
+    "file": "assets/models/washing_machine.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "세탁기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "table_lamp",
+    "file": "assets/models/table_lamp.glb",
+    "rarity": "common",
+    "displayNameKo": "탁상램프",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "floor_lamp",
+    "file": "assets/models/floor_lamp.glb",
+    "rarity": "common",
+    "displayNameKo": "플로어램프",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "ceiling_fan",
+    "file": "assets/models/ceiling_fan.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "천장선풍기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "laptop",
+    "file": "assets/models/laptop.glb",
+    "rarity": "rare",
+    "displayNameKo": "노트북",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "monitor",
+    "file": "assets/models/monitor.glb",
+    "rarity": "rare",
+    "displayNameKo": "모니터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "television",
+    "file": "assets/models/television.glb",
+    "rarity": "rare",
+    "displayNameKo": "텔레비전",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "radio",
+    "file": "assets/models/radio.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "라디오",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 13
+  },
+  {
+    "objKey": "speaker",
+    "file": "assets/models/speaker.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "스피커",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "round_rug",
+    "file": "assets/models/round_rug.glb",
+    "rarity": "common",
+    "displayNameKo": "원형러그",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "teddy_bear",
+    "file": "assets/models/teddy_bear.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "곰인형",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "candle",
+    "file": "assets/models/candle.glb",
+    "rarity": "common",
+    "displayNameKo": "양초",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "glass_lantern",
+    "file": "assets/models/glass_lantern.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "유리랜턴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "candle_lantern",
+    "file": "assets/models/candle_lantern.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "촛불랜턴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "shovel",
+    "file": "assets/models/shovel.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "삽",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "shovel_dirt",
+    "file": "assets/models/shovel_dirt.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "흙묻은삽",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "chalice",
+    "file": "assets/models/chalice.glb",
+    "rarity": "epic",
+    "displayNameKo": "황금성배",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "ritual_bowl",
+    "file": "assets/models/ritual_bowl.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "제기그릇",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "ritual_plate",
+    "file": "assets/models/ritual_plate.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "제기접시",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "round_urn",
+    "file": "assets/models/round_urn.glb",
+    "rarity": "rare",
+    "displayNameKo": "둥근유골함",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "square_urn",
+    "file": "assets/models/square_urn.glb",
+    "rarity": "rare",
+    "displayNameKo": "각진유골함",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "coffin",
+    "file": "assets/models/coffin.glb",
+    "rarity": "rare",
+    "displayNameKo": "관",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "old_coffin",
+    "file": "assets/models/old_coffin.glb",
+    "rarity": "rare",
+    "displayNameKo": "낡은관",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "cross_gravestone",
+    "file": "assets/models/cross_gravestone.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "십자가비석",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "stone_cross",
+    "file": "assets/models/stone_cross.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "돌십자가",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "carved_pumpkin",
+    "file": "assets/models/carved_pumpkin.glb",
+    "rarity": "rare",
+    "displayNameKo": "잭오랜턴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "brazier",
+    "file": "assets/models/brazier.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "화로",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "skeleton",
+    "file": "assets/models/skeleton.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 유골",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 79
+  },
+  {
+    "objKey": "ghost",
+    "file": "assets/models/ghost.glb",
+    "rarity": "rare",
+    "displayNameKo": "유령",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 49
+  },
+  {
+    "objKey": "zombie",
+    "file": "assets/models/zombie.glb",
+    "rarity": "rare",
+    "displayNameKo": "좀비",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 88
+  },
+  {
+    "objKey": "vampire",
+    "file": "assets/models/vampire.glb",
+    "rarity": "rare",
+    "displayNameKo": "뱀파이어",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 89
+  },
+  {
+    "objKey": "grave_keeper",
+    "file": "assets/models/grave_keeper.glb",
+    "rarity": "rare",
+    "displayNameKo": "묘지기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 91
+  },
+  {
+    "objKey": "stone_altar",
+    "file": "assets/models/stone_altar.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 제단",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/graveyard-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "gift_box",
+    "file": "assets/models/gift_box.glb",
+    "rarity": "common",
+    "displayNameKo": "선물상자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "round_gift",
+    "file": "assets/models/round_gift.glb",
+    "rarity": "common",
+    "displayNameKo": "둥근선물",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "candy_cane",
+    "file": "assets/models/candy_cane.glb",
+    "rarity": "common",
+    "displayNameKo": "지팡이사탕",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "christmas_stocking",
+    "file": "assets/models/christmas_stocking.glb",
+    "rarity": "common",
+    "displayNameKo": "크리스마스양말",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "snowflake",
+    "file": "assets/models/snowflake.glb",
+    "rarity": "common",
+    "displayNameKo": "눈송이",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "snowman",
+    "file": "assets/models/snowman.glb",
+    "rarity": "rare",
+    "displayNameKo": "눈사람",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "reindeer",
+    "file": "assets/models/reindeer.glb",
+    "rarity": "rare",
+    "displayNameKo": "순록",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 24
+  },
+  {
+    "objKey": "christmas_tree",
+    "file": "assets/models/christmas_tree.glb",
+    "rarity": "rare",
+    "displayNameKo": "크리스마스트리",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 20
+  },
+  {
+    "objKey": "wreath",
+    "file": "assets/models/wreath.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "크리스마스화환",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 23
+  },
+  {
+    "objKey": "gingerbread_man",
+    "file": "assets/models/gingerbread_man.glb",
+    "rarity": "common",
+    "displayNameKo": "진저브레드맨",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "nutcracker",
+    "file": "assets/models/nutcracker.glb",
+    "rarity": "rare",
+    "displayNameKo": "호두까기인형",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 24
+  },
+  {
+    "objKey": "menorah",
+    "file": "assets/models/menorah.glb",
+    "rarity": "rare",
+    "displayNameKo": "메노라",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 18
+  },
+  {
+    "objKey": "dreidel",
+    "file": "assets/models/dreidel.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "드레이델",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "kinara",
+    "file": "assets/models/kinara.glb",
+    "rarity": "rare",
+    "displayNameKo": "키나라촛대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "sled",
+    "file": "assets/models/sled.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "썰매",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "toy_locomotive",
+    "file": "assets/models/toy_locomotive.glb",
+    "rarity": "rare",
+    "displayNameKo": "장난감기관차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 25
+  },
+  {
+    "objKey": "holiday_lantern",
+    "file": "assets/models/holiday_lantern.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "장식랜턴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "holiday_bench",
+    "file": "assets/models/holiday_bench.glb",
+    "rarity": "common",
+    "displayNameKo": "공원벤치",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/holiday-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "barrel",
+    "file": "assets/models/barrel.glb",
+    "rarity": "common",
+    "displayNameKo": "나무통",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "crate",
+    "file": "assets/models/crate.glb",
+    "rarity": "common",
+    "displayNameKo": "나무상자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "bottle_crate",
+    "file": "assets/models/bottle_crate.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "병상자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 20
+  },
+  {
+    "objKey": "rum_bottle",
+    "file": "assets/models/rum_bottle.glb",
+    "rarity": "common",
+    "displayNameKo": "럼병",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "cannonball",
+    "file": "assets/models/cannonball.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "포탄",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "cannon",
+    "file": "assets/models/cannon.glb",
+    "rarity": "rare",
+    "displayNameKo": "대포",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "wheeled_cannon",
+    "file": "assets/models/wheeled_cannon.glb",
+    "rarity": "rare",
+    "displayNameKo": "바퀴대포",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 16
+  },
+  {
+    "objKey": "pirate_flag",
+    "file": "assets/models/pirate_flag.glb",
+    "rarity": "rare",
+    "displayNameKo": "해적깃발",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "paddle",
+    "file": "assets/models/paddle.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "노",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "pirate_shovel",
+    "file": "assets/models/pirate_shovel.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "해적삽",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "ship_mast",
+    "file": "assets/models/ship_mast.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "돛대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "rowboat",
+    "file": "assets/models/rowboat.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "나룻배",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "small_ship",
+    "file": "assets/models/small_ship.glb",
+    "rarity": "rare",
+    "displayNameKo": "작은범선",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 44
+  },
+  {
+    "objKey": "pirate_ship",
+    "file": "assets/models/pirate_ship.glb",
+    "rarity": "rare",
+    "displayNameKo": "해적선",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 57
+  },
+  {
+    "objKey": "shipwreck",
+    "file": "assets/models/shipwreck.glb",
+    "rarity": "rare",
+    "displayNameKo": "난파선",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 71
+  },
+  {
+    "objKey": "palm_tree",
+    "file": "assets/models/palm_tree.glb",
+    "rarity": "common",
+    "displayNameKo": "야자수",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/pirate-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "axe",
+    "file": "assets/models/axe.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "도끼",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "pickaxe",
+    "file": "assets/models/pickaxe.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "곡괭이",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "hammer",
+    "file": "assets/models/hammer.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "망치",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "hoe",
+    "file": "assets/models/hoe.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "괭이",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "survival_shovel",
+    "file": "assets/models/survival_shovel.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "야전삽",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "bucket",
+    "file": "assets/models/bucket.glb",
+    "rarity": "common",
+    "displayNameKo": "양동이",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "wooden_box",
+    "file": "assets/models/wooden_box.glb",
+    "rarity": "common",
+    "displayNameKo": "나무박스",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "campfire",
+    "file": "assets/models/campfire.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "모닥불",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "bedroll",
+    "file": "assets/models/bedroll.glb",
+    "rarity": "common",
+    "displayNameKo": "침낭",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "tent",
+    "file": "assets/models/tent.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "텐트",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "signpost",
+    "file": "assets/models/signpost.glb",
+    "rarity": "common",
+    "displayNameKo": "이정표",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "planks",
+    "file": "assets/models/planks.glb",
+    "rarity": "common",
+    "displayNameKo": "널빤지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "firewood",
+    "file": "assets/models/firewood.glb",
+    "rarity": "common",
+    "displayNameKo": "장작",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "stone_pile",
+    "file": "assets/models/stone_pile.glb",
+    "rarity": "common",
+    "displayNameKo": "돌무더기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "anvil",
+    "file": "assets/models/anvil.glb",
+    "rarity": "rare",
+    "displayNameKo": "모루",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "workbench",
+    "file": "assets/models/workbench.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "작업대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "big_fish",
+    "file": "assets/models/big_fish.glb",
+    "rarity": "common",
+    "displayNameKo": "큰물고기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "red_mushroom",
+    "file": "assets/models/red_mushroom.glb",
+    "rarity": "common",
+    "displayNameKo": "빨간버섯",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 3
+  },
+  {
+    "objKey": "tan_mushroom",
+    "file": "assets/models/tan_mushroom.glb",
+    "rarity": "common",
+    "displayNameKo": "갈색버섯",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 3
+  },
+  {
+    "objKey": "red_flower",
+    "file": "assets/models/red_flower.glb",
+    "rarity": "common",
+    "displayNameKo": "빨간꽃",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "yellow_flower",
+    "file": "assets/models/yellow_flower.glb",
+    "rarity": "common",
+    "displayNameKo": "노란꽃",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "purple_flower",
+    "file": "assets/models/purple_flower.glb",
+    "rarity": "common",
+    "displayNameKo": "보라꽃",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "cactus",
+    "file": "assets/models/cactus.glb",
+    "rarity": "common",
+    "displayNameKo": "선인장",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "log_nature",
+    "file": "assets/models/log_nature.glb",
+    "rarity": "common",
+    "displayNameKo": "통나무",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "tree_stump",
+    "file": "assets/models/tree_stump.glb",
+    "rarity": "common",
+    "displayNameKo": "나무그루터기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "water_lily",
+    "file": "assets/models/water_lily.glb",
+    "rarity": "common",
+    "displayNameKo": "수련",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "field_pumpkin",
+    "file": "assets/models/field_pumpkin.glb",
+    "rarity": "common",
+    "displayNameKo": "밭호박",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "stone_head_statue",
+    "file": "assets/models/stone_head_statue.glb",
+    "rarity": "epic",
+    "displayNameKo": "석상 머리",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "obelisk",
+    "file": "assets/models/obelisk.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 오벨리스크",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 3
+  },
+  {
+    "objKey": "stone_ring",
+    "file": "assets/models/stone_ring.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 석환",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "broken_column",
+    "file": "assets/models/broken_column.glb",
+    "rarity": "rare",
+    "displayNameKo": "부러진 석주",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "stone_campfire",
+    "file": "assets/models/stone_campfire.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "돌모닥불",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "velociraptor",
+    "file": "assets/models/velociraptor.glb",
+    "rarity": "legendary",
+    "displayNameKo": "벨로키랍토르 화석",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/cnlGH2UcDd",
+    "author": "Quaternius",
+    "sizeKB": 177
+  },
+  {
+    "objKey": "diplodocus",
+    "file": "assets/models/diplodocus.glb",
+    "rarity": "legendary",
+    "displayNameKo": "디플로도쿠스 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/12n6ICAVpYB",
+    "author": "Poly by Google",
+    "sizeKB": 31
+  },
+  {
+    "objKey": "tiltasaurus",
+    "file": "assets/models/tiltasaurus.glb",
+    "rarity": "legendary",
+    "displayNameKo": "틸타사우루스 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0DS8Ln10GRc",
+    "author": "Anonymous",
+    "sizeKB": 86
+  },
+  {
+    "objKey": "trilobite",
+    "file": "assets/models/trilobite.glb",
+    "rarity": "epic",
+    "displayNameKo": "삼엽충 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/3Gyw-gUrpp0",
+    "author": "Jakob Hippe",
+    "sizeKB": 239
+  },
+  {
+    "objKey": "jeweled_crown",
+    "file": "assets/models/jeweled_crown.glb",
+    "rarity": "legendary",
+    "displayNameKo": "보석 왕관",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0seQ0mn72s5",
+    "author": "Poly by Google",
+    "sizeKB": 34
+  },
+  {
+    "objKey": "ancient_idol",
+    "file": "assets/models/ancient_idol.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 우상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/2uQZ8GxU8nQ",
+    "author": "Oded Sharon",
+    "sizeKB": 8
   }
 ]

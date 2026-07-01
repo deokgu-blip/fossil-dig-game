@@ -216,6 +216,7 @@
   const MOCK = QP.has("mock") ? (QP.get("mock") !== "0") : false;   // ?mock=1 → 개발용 가짜 GPS
   const DIG_URL = "../engine/fossil-dig.html";                       // 발굴게임 (상대경로, 이중타깃 호환)
   const REGIONS_URL = "../stages/regions.json";
+  const MODELS_URL = "../assets/models/manifest.json";   // 발굴 대상 모델 마스터 목록(도감/loot 풀)
   const DISCOVER_RADIUS_M = 40;    // 이 거리 안이면 "발견" 가능
   const SPOT_COUNT = 5;            // 플레이어 주변 스폰 지점 수
   // 스폰 반경(미터) — 사용자 2026-07-01 "채굴위치 반경 100m": 모든 지점이 플레이어 100m 이내.
@@ -370,6 +371,24 @@
     }
   };
 
+  // ── 발굴 대상 모델 마스터 목록(manifest.json) = 도감 카탈로그 + loot 풀 ──
+  //  180+종을 전부 수집 가능하게: 지역 loot 대신 이 전역 풀에서 희귀도 가중치로 뽑는다.
+  //  (지역 라벨/지오코드는 REGIONS 유지. 지역별 편중은 추후.)
+  let MANIFEST = null;      // [{objKey, rarity, displayNameKo, ...}]
+  let LOOT_POOL = null;     // [{obj, name, rarity}]
+  const RARITY_WEIGHT = { common:100, uncommon:42, rare:16, epic:6, legendary:2 };
+  function buildLootPool() {
+    if (!MANIFEST || !MANIFEST.length) { LOOT_POOL = null; return; }
+    LOOT_POOL = MANIFEST.map(m => ({ obj: m.objKey, name: m.displayNameKo || m.objKey, rarity: m.rarity || "common" }));
+  }
+  async function loadModels() {
+    try {
+      const res = await fetch(MODELS_URL, { cache:"no-cache" });
+      if (res.ok) { MANIFEST = await res.json(); buildLootPool(); return; }
+    } catch (e) { console.warn("[models] manifest fetch 실패 — 지역 loot로 폴백"); }
+    MANIFEST = null; LOOT_POOL = null;
+  }
+
   // obj 타입 → 도감 아이콘(이모지). POC: 발굴게임 릴리프는 dino_skull 1종이나 라벨은 다양.
   const OBJ_ICON = {
     // 신 12종(실물 3D 모델 키) — 도감/결과 카드 이모지
@@ -379,6 +398,30 @@
     dino_skull:"🦖", bone:"🦴", egg:"🥚", claw:"🦅", tooth:"🦷", plate:"🛡️",
     footprint:"🐾", fight:"⚔️", bird:"🪶", ammonite:"🐚", trilobite:"🦂", relic:"🏺"
   };
+  // 180+종 도감 아이콘: 명시 아이콘 없으면 키/이름 키워드로 이모지 추정(수집 화면 다양성).
+  const ICON_RULES = [
+    [/raptor|rex|saur|dino|공룡/, "🦖"], [/trilob|ammon|fossil|화석|암모|삼엽/, "🐚"],
+    [/skull|bone|skele|해골|뼈|유골/, "💀"], [/crown|왕관/, "👑"], [/chest|treasure|보물/, "🧰"],
+    [/gold|coin|금화|동전|엽전|주화|은화/, "🪙"], [/gem|jewel|diamond|보석|원석/, "💎"],
+    [/chalice|goblet|cup|성배|잔/, "🏆"], [/idol|statue|altar|obelisk|석상|제단|우상|유물/, "🗿"],
+    [/sword|dagger|blade|검|칼|환두/, "🗡️"], [/hammer|axe|망치|도끼|도구/, "🔨"],
+    [/cake|cupcake|케이크/, "🍰"], [/bread|sandwich|burger|빵|샌드|버거/, "🥪"],
+    [/apple|banana|orange|fruit|melon|watermelon|사과|바나나|과일|수박|오렌지/, "🍎"],
+    [/bottle|wine|병/, "🍾"], [/can|깡통/, "🥫"], [/mushroom|버섯/, "🍄"], [/pumpkin|호박/, "🎃"],
+    [/corn|옥수수/, "🌽"], [/turkey|chicken|meat|고기|칠면조/, "🍗"], [/cocktail|drink|칵테일|음료/, "🍹"],
+    [/chair|stool|sofa|table|desk|의자|탁자|책상|가구/, "🪑"], [/bed|pillow|침대|베개/, "🛏️"],
+    [/lamp|candle|lantern|등불|촛/, "🕯️"], [/tv|monitor|laptop|screen|television|모니터|노트북|텔레비/, "💻"],
+    [/toaster|kitchen|토스터/, "🍞"], [/ghost|유령/, "👻"], [/zombie|좀비/, "🧟"],
+    [/vampire|뱀파이어/, "🧛"], [/coffin|grave|관|무덤/, "⚰️"], [/snow|dreidel|holiday|눈|겨울/, "❄️"],
+    [/ship|mast|boat|배|돛/, "⛵"], [/crate|box|상자/, "📦"], [/sign|표지/, "🪧"], [/vase|amphora|pot|항아리|토기|단지|도자/, "🏺"]
+  ];
+  function iconFor(item) {
+    if (item && OBJ_ICON[item.obj]) return OBJ_ICON[item.obj];
+    const s = ((item && item.obj) || "") + " " + ((item && item.name) || "");
+    const t = s.toLowerCase();
+    for (const [re, ic] of ICON_RULES) if (re.test(t)) return ic;
+    return "🗿";
+  }
   const RARITY_LABEL = { common:"COMMON", uncommon:"UNCOMMON", rare:"RARE", epic:"EPIC", legendary:"LEGENDARY" };
   const RARITY_KR = { common:"흔함", uncommon:"제법", rare:"희귀", epic:"영웅", legendary:"전설" };
 
@@ -491,6 +534,14 @@
   // loot 선택 (가중치 랜덤) — 현재 지역 테이블에서
   // ==========================================================================
   function rollLoot(regionKey) {
+    // 우선: 전역 모델 풀(manifest, 180+종)에서 희귀도 가중치로 추출 → 모든 모델 수집 가능.
+    if (LOOT_POOL && LOOT_POOL.length) {
+      let total = 0; for (const l of LOOT_POOL) total += (RARITY_WEIGHT[l.rarity] || 10);
+      let x = Math.random()*total;
+      for (const l of LOOT_POOL) { x -= (RARITY_WEIGHT[l.rarity] || 10); if (x<=0) return Object.assign({ region: regionKey }, l); }
+      return Object.assign({ region: regionKey }, LOOT_POOL[0]);
+    }
+    // 폴백: 지역 loot 테이블(manifest 미로드 시)
     const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
     const reg = rs[regionKey] || rs.default || REGIONS_FALLBACK.regions.default;
     const loot = reg.loot || REGIONS_FALLBACK.regions.default.loot;
@@ -511,7 +562,9 @@
   function saveCollection(c) {
     try { localStorage.setItem(LS_COLLECTION, JSON.stringify(c)); } catch (e) {}
   }
-  function collectionKey(item) { return (item.region||"default") + "|" + (item.name||item.obj); }
+  // 도감 키 = 모델(obj) 기준: 같은 모델은 어디서 파든 도감 1칸(수량만 증가). 180+종 = 180+칸.
+  //  (구 폴백: obj 없으면 region|name)
+  function collectionKey(item) { return item.obj || ((item.region||"default") + "|" + (item.name||"")); }
 
   // ★★★ 단일 발견 이벤트 초크포인트 — 나중에 Supabase 브로드캐스트를 여기 한 곳에만 추가 ★★★
   function onDiscover(item) {
@@ -576,7 +629,7 @@
   // 발견 결과 카드
   // ==========================================================================
   function showResult(item, qty) {
-    document.getElementById("r-icon").textContent = OBJ_ICON[item.obj] || "🦴";
+    document.getElementById("r-icon").textContent = iconFor(item);
     document.getElementById("r-name").textContent = item.name;
     const rb = document.getElementById("r-rarity");
     rb.textContent = RARITY_LABEL[item.rarity] || "COMMON";
@@ -1338,12 +1391,18 @@
   // ==========================================================================
   // 지역별 전체 loot 목록(도감 미수집 실루엣용) — 모든 지역 loot 평탄화(중복 이름 dedupe)
   function allKnownItems() {
-    const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
     const seen = new Map();
+    // 우선: 매니페스트 전체(180+종)를 obj 기준 카탈로그로 — 모든 모델이 도감 한 칸.
+    if (LOOT_POOL && LOOT_POOL.length) {
+      for (const l of LOOT_POOL) if (!seen.has(l.obj)) seen.set(l.obj, { obj:l.obj, name:l.name, rarity:l.rarity });
+      return seen;
+    }
+    // 폴백: 지역 loot 평탄화(구 방식)
+    const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
     for (const rk in rs) {
-      if (rk === "default") continue;   // default는 판정 실패용, 도감 카탈로그에서 제외
+      if (rk === "default") continue;
       for (const l of (rs[rk].loot||[])) {
-        const key = rk + "|" + l.name;
+        const key = l.obj || (rk + "|" + l.name);
         if (!seen.has(key)) seen.set(key, Object.assign({ region: rk }, l));
       }
     }
@@ -1376,21 +1435,23 @@
   }
   function cardHTML(item, owned) {
     const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
-    const regLabel = (rs[item.region] && rs[item.region].label) || "미지";
-    const icon = OBJ_ICON[item.obj] || "🦴";
+    // 지역 라벨은 '수집한' 항목이 발굴 지역을 갖고 있을 때만 표시(전역 풀 카탈로그엔 지역 없음).
+    const regKey = (owned && owned.region) || item.region;
+    const regLabel = (regKey && rs[regKey] && rs[regKey].label) || "";
+    const regDiv = regLabel ? '<div class="cc-region">'+regLabel+'</div>' : '';
+    const icon = iconFor(item);
     const rc = rarityColor(item.rarity);
     if (owned) {
       return '<div class="col-card"><div class="cc-qty">×'+owned.qty+'</div>'
         + '<div class="cc-icon">'+icon+'</div>'
         + '<div class="cc-name">'+item.name+'</div>'
-        + '<div class="cc-region">'+regLabel+'</div>'
+        + regDiv
         + '<span class="cc-rarity" style="background:'+rc+';color:#1a130c;">'+(RARITY_KR[item.rarity]||"")+'</span>'
         + '</div>';
     }
     return '<div class="col-card locked">'
       + '<div class="cc-icon">'+icon+'</div>'
       + '<div class="cc-name">？？？</div>'
-      + '<div class="cc-region">'+regLabel+'</div>'
       + '<span class="cc-rarity" style="background:#555;color:#ccc;">🔒 미발굴</span>'
       + '</div>';
   }
@@ -1419,6 +1480,7 @@
   async function boot() {
     await initMap();          // liberty 소스 fetch(타임아웃 6s) 후 미니멀 스타일로 맵 생성
     await loadRegions();
+    await loadModels();       // 발굴 모델 마스터 목록(도감 카탈로그 + loot 풀, 180+종)
     drainPending();   // 이전 세션/단독실행이 남긴 완료 이벤트 흡수(있다면)
     if (MOCK) startMock(); else startRealGPS();
     window.__ready = true;
@@ -1549,6 +1611,10 @@
     clearCollection: () => { try{localStorage.removeItem(LS_COLLECTION);localStorage.removeItem(LS_PENDING);}catch(e){} },
     resultVisible: () => document.getElementById("result").classList.contains("show"),
     rollLoot: (region) => rollLoot(region),
+    manifestSize: () => MANIFEST ? MANIFEST.length : 0,
+    poolSize: () => LOOT_POOL ? LOOT_POOL.length : 0,
+    poolObjKeys: () => LOOT_POOL ? LOOT_POOL.map(l => l.obj) : [],
+    catalogSize: () => allKnownItems().size,
     mockMove: (dir) => mockMove(dir)
   };
   // 지도 전용 QA 별칭(태스크 규약): __mapqa.charState() 등 지도/캐릭터 훅 노출

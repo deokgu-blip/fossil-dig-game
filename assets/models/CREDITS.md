@@ -38,6 +38,41 @@ The following models are **CC0 1.0** (public domain) and require **no attributio
 
 > Note: CC0 items need no attribution, but crediting Quaternius (https://quaternius.com) is appreciated.
 
+## Batch 2 — Bulk collection expansion (2026-07)
+
+Added ~168 new "dig-up" collectibles for the grab-bag collection. Two sources:
+
+### Kenney kits — CC0 1.0 (no attribution required)
+
+162 models drawn from the following **CC0** Kenney kits (all by **Kenney**, https://kenney.nl):
+Food Kit, Furniture Kit, Graveyard Kit, Holiday Kit, Nature Kit, Pirate Kit, Survival Kit.
+Each kit is a single CC0 ZIP; individual GLBs were extracted and re-optimized with `gltf-transform`
+(`--compress quantize` = KHR mesh quantization, textures→webp@512, **no meshopt/draco**).
+
+> Models by Kenney (kenney.nl) — CC0 1.0 (public domain). No attribution required, but appreciated.
+
+### Poly Pizza artifact/fossil/treasure tier
+
+6 higher-rarity artifact/fossil/dinosaur models from Poly Pizza. One is CC0 (Quaternius);
+the rest are **CC-BY** and **must be credited**:
+
+| Item (objKey) | Author | License | Source |
+|---------------|--------|---------|--------|
+| `velociraptor` (벨로키랍토르 화석) | Quaternius | CC0 1.0 | https://poly.pizza/m/cnlGH2UcDd |
+| `diplodocus` (디플로도쿠스 화석) | Poly by Google | CC-BY 3.0 | https://poly.pizza/m/12n6ICAVpYB |
+| `tiltasaurus` (틸타사우루스 화석) | Anonymous | CC-BY 3.0 | https://poly.pizza/m/0DS8Ln10GRc |
+| `trilobite` (삼엽충 화석) | Jakob Hippe | CC-BY 3.0 | https://poly.pizza/m/3Gyw-gUrpp0 |
+| `jeweled_crown` (보석 왕관) | Poly by Google | CC-BY 3.0 | https://poly.pizza/m/0seQ0mn72s5 |
+| `ancient_idol` (고대 우상) | Oded Sharon | CC-BY 3.0 | https://poly.pizza/m/2uQZ8GxU8nQ |
+
+Suggested credits-screen text (append to existing CC-BY list):
+
+> "Diplodocus" by Poly by Google — CC-BY 3.0 (https://poly.pizza/m/12n6ICAVpYB)
+> "Tiltasaurus" — CC-BY 3.0 (https://poly.pizza/m/0DS8Ln10GRc)
+> "Trilobite" by Jakob Hippe — CC-BY 3.0 (https://poly.pizza/m/3Gyw-gUrpp0)
+> "Crown" by Poly by Google — CC-BY 3.0 (https://poly.pizza/m/0seQ0mn72s5)
+> "Idol" by Oded Sharon — CC-BY 3.0 (https://poly.pizza/m/2uQZ8GxU8nQ)
+
 ## Loader compatibility note
 
 Optimized files require the glTF extensions `KHR_mesh_quantization` and `EXT_texture_webp`.

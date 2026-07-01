@@ -184,6 +184,8 @@
     // dino: 원본(양자화) 파일이 렌더는 정상이나 스키닝 bind-pose bbox가 부정확 → dequantize본에서
     //  boneTransform으로 측정한 '실제 포즈 bbox'를 하드코딩(posedBox)해 정확히 fit·정렬. animate로 idle.
     dino:{file:"dino.glb", animate:true, posedBox:{ sz:[7.96,14.68,30.88], c:[0,7.25,-1.0], minY:-0.09 }},
+    // velociraptor: 스키닝+양자화 + 리깅 특이로 posed-box 측정 불가 → 명시 fitScale·pos(육안 튜닝).
+    velociraptor:{file:"velociraptor.glb", animate:false, fitScale:0.9, pos:[0,0,0]},
     chest:{file:"chest.glb"}, goldbag:{file:"goldbag.glb"}
   };
   // 구 regions.json obj키 → 신 모델 키 (loot 재구성 전 호환용 폴백)
