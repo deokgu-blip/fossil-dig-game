@@ -1798,5 +1798,1245 @@
     "source": "https://poly.pizza/m/2uQZ8GxU8nQ",
     "author": "Oded Sharon",
     "sizeKB": 8
+  },
+  {
+    "objKey": "toy_blaster",
+    "file": "assets/models/toy_blaster.glb",
+    "rarity": "common",
+    "displayNameKo": "장난감 블래스터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/blaster-kit",
+    "author": "Kenney",
+    "sizeKB": 18
+  },
+  {
+    "objKey": "toy_blaster_heavy",
+    "file": "assets/models/toy_blaster_heavy.glb",
+    "rarity": "common",
+    "displayNameKo": "대형 블래스터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/blaster-kit",
+    "author": "Kenney",
+    "sizeKB": 28
+  },
+  {
+    "objKey": "grenade",
+    "file": "assets/models/grenade.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "수류탄",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/blaster-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "rifle_scope",
+    "file": "assets/models/rifle_scope.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "조준경",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/blaster-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "shooting_target",
+    "file": "assets/models/shooting_target.glb",
+    "rarity": "common",
+    "displayNameKo": "사격 표적",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/blaster-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "sedan_car",
+    "file": "assets/models/sedan_car.glb",
+    "rarity": "common",
+    "displayNameKo": "세단 자동차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 54
+  },
+  {
+    "objKey": "suv_car",
+    "file": "assets/models/suv_car.glb",
+    "rarity": "common",
+    "displayNameKo": "SUV",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 65
+  },
+  {
+    "objKey": "taxi_car",
+    "file": "assets/models/taxi_car.glb",
+    "rarity": "common",
+    "displayNameKo": "택시",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "police_car",
+    "file": "assets/models/police_car.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "경찰차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 63
+  },
+  {
+    "objKey": "ambulance",
+    "file": "assets/models/ambulance.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "구급차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 80
+  },
+  {
+    "objKey": "firetruck",
+    "file": "assets/models/firetruck.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "소방차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 80
+  },
+  {
+    "objKey": "garbage_truck",
+    "file": "assets/models/garbage_truck.glb",
+    "rarity": "common",
+    "displayNameKo": "쓰레기차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 91
+  },
+  {
+    "objKey": "delivery_van",
+    "file": "assets/models/delivery_van.glb",
+    "rarity": "common",
+    "displayNameKo": "배달 트럭",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 70
+  },
+  {
+    "objKey": "tractor",
+    "file": "assets/models/tractor.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "트랙터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "cargo_truck",
+    "file": "assets/models/cargo_truck.glb",
+    "rarity": "common",
+    "displayNameKo": "화물트럭",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "race_car",
+    "file": "assets/models/race_car.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "경주용차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 52
+  },
+  {
+    "objKey": "future_racer",
+    "file": "assets/models/future_racer.glb",
+    "rarity": "rare",
+    "displayNameKo": "미래형 레이서",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "luxury_suv",
+    "file": "assets/models/luxury_suv.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "고급 SUV",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "traffic_cone",
+    "file": "assets/models/traffic_cone.glb",
+    "rarity": "common",
+    "displayNameKo": "라바콘",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/car-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "monster_truck",
+    "file": "assets/models/monster_truck.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "몬스터트럭",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/toy-car-kit",
+    "author": "Kenney",
+    "sizeKB": 34
+  },
+  {
+    "objKey": "drag_racer",
+    "file": "assets/models/drag_racer.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "드래그 레이서",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/toy-car-kit",
+    "author": "Kenney",
+    "sizeKB": 29
+  },
+  {
+    "objKey": "vintage_racer",
+    "file": "assets/models/vintage_racer.glb",
+    "rarity": "rare",
+    "displayNameKo": "클래식 레이서",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/toy-car-kit",
+    "author": "Kenney",
+    "sizeKB": 28
+  },
+  {
+    "objKey": "speedster",
+    "file": "assets/models/speedster.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "스피드스터",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/toy-car-kit",
+    "author": "Kenney",
+    "sizeKB": 28
+  },
+  {
+    "objKey": "catapult",
+    "file": "assets/models/catapult.glb",
+    "rarity": "rare",
+    "displayNameKo": "투석기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 32
+  },
+  {
+    "objKey": "trebuchet",
+    "file": "assets/models/trebuchet.glb",
+    "rarity": "rare",
+    "displayNameKo": "트레뷰셋",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 46
+  },
+  {
+    "objKey": "ballista",
+    "file": "assets/models/ballista.glb",
+    "rarity": "rare",
+    "displayNameKo": "발리스타",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 25
+  },
+  {
+    "objKey": "battering_ram",
+    "file": "assets/models/battering_ram.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "공성 망치",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 39
+  },
+  {
+    "objKey": "siege_tower",
+    "file": "assets/models/siege_tower.glb",
+    "rarity": "rare",
+    "displayNameKo": "공성탑",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 58
+  },
+  {
+    "objKey": "castle_flag",
+    "file": "assets/models/castle_flag.glb",
+    "rarity": "common",
+    "displayNameKo": "성 깃발",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "banner_long",
+    "file": "assets/models/banner_long.glb",
+    "rarity": "common",
+    "displayNameKo": "긴 현수막",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "boulder",
+    "file": "assets/models/boulder.glb",
+    "rarity": "common",
+    "displayNameKo": "바위",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/castle-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "space_rover",
+    "file": "assets/models/space_rover.glb",
+    "rarity": "rare",
+    "displayNameKo": "탐사 로버",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "satellite_dish",
+    "file": "assets/models/satellite_dish.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "위성 안테나",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "space_speeder",
+    "file": "assets/models/space_speeder.glb",
+    "rarity": "rare",
+    "displayNameKo": "우주 스피더",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "space_racer",
+    "file": "assets/models/space_racer.glb",
+    "rarity": "rare",
+    "displayNameKo": "우주 레이서",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "mining_craft",
+    "file": "assets/models/mining_craft.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "채굴선",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 15
+  },
+  {
+    "objKey": "cargo_shuttle",
+    "file": "assets/models/cargo_shuttle.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "화물 셔틀",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "meteor",
+    "file": "assets/models/meteor.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "운석",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "meteor_large",
+    "file": "assets/models/meteor_large.glb",
+    "rarity": "rare",
+    "displayNameKo": "큰 운석",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "space_crystal",
+    "file": "assets/models/space_crystal.glb",
+    "rarity": "rare",
+    "displayNameKo": "우주 수정",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 13
+  },
+  {
+    "objKey": "crystal_cluster",
+    "file": "assets/models/crystal_cluster.glb",
+    "rarity": "epic",
+    "displayNameKo": "거대 수정 군집",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "space_barrel",
+    "file": "assets/models/space_barrel.glb",
+    "rarity": "common",
+    "displayNameKo": "연료통",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "laser_turret",
+    "file": "assets/models/laser_turret.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "레이저 터렛",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 17
+  },
+  {
+    "objKey": "power_generator",
+    "file": "assets/models/power_generator.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "발전기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "laser_rifle",
+    "file": "assets/models/laser_rifle.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "레이저 소총",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "control_console",
+    "file": "assets/models/control_console.glb",
+    "rarity": "common",
+    "displayNameKo": "제어 콘솔",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "rocket_engine",
+    "file": "assets/models/rocket_engine.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "로켓 엔진",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/space-kit",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "wooden_cart",
+    "file": "assets/models/wooden_cart.glb",
+    "rarity": "common",
+    "displayNameKo": "나무 수레",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "tall_cart",
+    "file": "assets/models/tall_cart.glb",
+    "rarity": "common",
+    "displayNameKo": "짐수레",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 32
+  },
+  {
+    "objKey": "fountain",
+    "file": "assets/models/fountain.glb",
+    "rarity": "rare",
+    "displayNameKo": "분수대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 29
+  },
+  {
+    "objKey": "street_lantern",
+    "file": "assets/models/street_lantern.glb",
+    "rarity": "common",
+    "displayNameKo": "가로등",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "windmill",
+    "file": "assets/models/windmill.glb",
+    "rarity": "rare",
+    "displayNameKo": "풍차",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 29
+  },
+  {
+    "objKey": "watermill",
+    "file": "assets/models/watermill.glb",
+    "rarity": "rare",
+    "displayNameKo": "물레방아",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "market_stall",
+    "file": "assets/models/market_stall.glb",
+    "rarity": "common",
+    "displayNameKo": "노점",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "cart_wheel",
+    "file": "assets/models/cart_wheel.glb",
+    "rarity": "common",
+    "displayNameKo": "수레바퀴",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "red_banner",
+    "file": "assets/models/red_banner.glb",
+    "rarity": "common",
+    "displayNameKo": "붉은 깃발",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "windmill_blade",
+    "file": "assets/models/windmill_blade.glb",
+    "rarity": "common",
+    "displayNameKo": "풍차 날개",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/fantasy-town-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "f1_car_red",
+    "file": "assets/models/f1_car_red.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "F1 레이싱카",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 37
+  },
+  {
+    "objKey": "f1_car_green",
+    "file": "assets/models/f1_car_green.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "녹색 레이싱카",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 37
+  },
+  {
+    "objKey": "checkered_flag",
+    "file": "assets/models/checkered_flag.glb",
+    "rarity": "common",
+    "displayNameKo": "체커기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "race_pylon",
+    "file": "assets/models/race_pylon.glb",
+    "rarity": "common",
+    "displayNameKo": "경주 표지",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "race_tent",
+    "file": "assets/models/race_tent.glb",
+    "rarity": "common",
+    "displayNameKo": "경주장 텐트",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "billboard",
+    "file": "assets/models/billboard.glb",
+    "rarity": "common",
+    "displayNameKo": "광고판",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/racing-kit",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "td_catapult",
+    "file": "assets/models/td_catapult.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "방어 투석기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 21
+  },
+  {
+    "objKey": "td_cannon",
+    "file": "assets/models/td_cannon.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "방어 대포",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 21
+  },
+  {
+    "objKey": "td_turret",
+    "file": "assets/models/td_turret.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "방어 터렛",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "td_ballista",
+    "file": "assets/models/td_ballista.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "방어 발리스타",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "blue_crystal",
+    "file": "assets/models/blue_crystal.glb",
+    "rarity": "rare",
+    "displayNameKo": "푸른 결정",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 17
+  },
+  {
+    "objKey": "crystal_tower",
+    "file": "assets/models/crystal_tower.glb",
+    "rarity": "rare",
+    "displayNameKo": "수정탑",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/tower-defense-kit",
+    "author": "Kenney",
+    "sizeKB": 23
+  },
+  {
+    "objKey": "arena_statue",
+    "file": "assets/models/arena_statue.glb",
+    "rarity": "epic",
+    "displayNameKo": "투기장 석상",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 20
+  },
+  {
+    "objKey": "trophy",
+    "file": "assets/models/trophy.glb",
+    "rarity": "rare",
+    "displayNameKo": "우승 트로피",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "arena_sword",
+    "file": "assets/models/arena_sword.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "투기장 검",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "arena_spear",
+    "file": "assets/models/arena_spear.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "투기장 창",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "weapon_rack",
+    "file": "assets/models/weapon_rack.glb",
+    "rarity": "common",
+    "displayNameKo": "무기 거치대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "stone_column",
+    "file": "assets/models/stone_column.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "석조 기둥",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "broken_pillar",
+    "file": "assets/models/broken_pillar.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "부서진 기둥",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-arena",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "dungeon_chest",
+    "file": "assets/models/dungeon_chest.glb",
+    "rarity": "rare",
+    "displayNameKo": "던전 상자",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 15
+  },
+  {
+    "objKey": "dungeon_coin",
+    "file": "assets/models/dungeon_coin.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "던전 금화",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "round_shield",
+    "file": "assets/models/round_shield.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "원형 방패",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "kite_shield",
+    "file": "assets/models/kite_shield.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "카이트 방패",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 7
+  },
+  {
+    "objKey": "dungeon_sword",
+    "file": "assets/models/dungeon_sword.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "던전 검",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "dungeon_spear",
+    "file": "assets/models/dungeon_spear.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "던전 창",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "spike_trap",
+    "file": "assets/models/spike_trap.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "가시 함정",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "dungeon_barrel",
+    "file": "assets/models/dungeon_barrel.glb",
+    "rarity": "common",
+    "displayNameKo": "던전 나무통",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 8
+  },
+  {
+    "objKey": "dungeon_banner",
+    "file": "assets/models/dungeon_banner.glb",
+    "rarity": "common",
+    "displayNameKo": "던전 깃발",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-dungeon",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "cash_register",
+    "file": "assets/models/cash_register.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "금전등록기",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "shopping_cart",
+    "file": "assets/models/shopping_cart.glb",
+    "rarity": "common",
+    "displayNameKo": "쇼핑카트",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 15
+  },
+  {
+    "objKey": "shopping_basket",
+    "file": "assets/models/shopping_basket.glb",
+    "rarity": "common",
+    "displayNameKo": "장바구니",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "freezer",
+    "file": "assets/models/freezer.glb",
+    "rarity": "common",
+    "displayNameKo": "냉동고",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "store_shelf",
+    "file": "assets/models/store_shelf.glb",
+    "rarity": "common",
+    "displayNameKo": "진열장",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "fruit_stand",
+    "file": "assets/models/fruit_stand.glb",
+    "rarity": "common",
+    "displayNameKo": "과일 진열대",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 18
+  },
+  {
+    "objKey": "bottle_bin",
+    "file": "assets/models/bottle_bin.glb",
+    "rarity": "common",
+    "displayNameKo": "병 수거함",
+    "license": "CC0 1.0",
+    "source": "https://kenney.nl/assets/mini-market",
+    "author": "Kenney",
+    "sizeKB": 11
+  },
+  {
+    "objKey": "gold_ingots",
+    "file": "assets/models/gold_ingots.glb",
+    "rarity": "epic",
+    "displayNameKo": "금괴 더미",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/3jRhAgbc6t",
+    "author": "Quaternius",
+    "sizeKB": 25
+  },
+  {
+    "objKey": "gold_rocks",
+    "file": "assets/models/gold_rocks.glb",
+    "rarity": "rare",
+    "displayNameKo": "금광석",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/49NgnJzOHc",
+    "author": "Quaternius",
+    "sizeKB": 24
+  },
+  {
+    "objKey": "open_chest",
+    "file": "assets/models/open_chest.glb",
+    "rarity": "legendary",
+    "displayNameKo": "열린 보물상자",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/8kjEXzHC0S",
+    "author": "Quaternius",
+    "sizeKB": 72
+  },
+  {
+    "objKey": "gold_stack",
+    "file": "assets/models/gold_stack.glb",
+    "rarity": "epic",
+    "displayNameKo": "금화 더미",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/4VbbgjDm87J",
+    "author": "Garrett LeFever",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "treasure_chest2",
+    "file": "assets/models/treasure_chest2.glb",
+    "rarity": "epic",
+    "displayNameKo": "보물 궤짝",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/3SGvQIwe214",
+    "author": "Alex Safayan",
+    "sizeKB": 46
+  },
+  {
+    "objKey": "treasure_map",
+    "file": "assets/models/treasure_map.glb",
+    "rarity": "rare",
+    "displayNameKo": "보물 지도",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/4hvGyOso598",
+    "author": "jeremy",
+    "sizeKB": 16
+  },
+  {
+    "objKey": "red_gem",
+    "file": "assets/models/red_gem.glb",
+    "rarity": "rare",
+    "displayNameKo": "붉은 보석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/6K1VsAxWLwH",
+    "author": "Wesley Thompson",
+    "sizeKB": 4
+  },
+  {
+    "objKey": "google_gem",
+    "file": "assets/models/google_gem.glb",
+    "rarity": "rare",
+    "displayNameKo": "푸른 원석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/09p9-Mnp4Sc",
+    "author": "Poly by Google",
+    "sizeKB": 61
+  },
+  {
+    "objKey": "gold_nugget",
+    "file": "assets/models/gold_nugget.glb",
+    "rarity": "epic",
+    "displayNameKo": "황금 덩이",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0w-WpQf7O9J",
+    "author": "Poly by Google",
+    "sizeKB": 3
+  },
+  {
+    "objKey": "gold_sword",
+    "file": "assets/models/gold_sword.glb",
+    "rarity": "epic",
+    "displayNameKo": "황금 검",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/5fJinXD1mc",
+    "author": "Quaternius",
+    "sizeKB": 6
+  },
+  {
+    "objKey": "blue_diamond",
+    "file": "assets/models/blue_diamond.glb",
+    "rarity": "epic",
+    "displayNameKo": "푸른 다이아몬드",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/2c3eNMf_J4y",
+    "author": "Sutu Eats Flies",
+    "sizeKB": 2
+  },
+  {
+    "objKey": "gem_cluster",
+    "file": "assets/models/gem_cluster.glb",
+    "rarity": "rare",
+    "displayNameKo": "보석 원석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/3fdgnvEHWpS",
+    "author": "Natalia Wojtkowska",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "crystal_shards",
+    "file": "assets/models/crystal_shards.glb",
+    "rarity": "rare",
+    "displayNameKo": "수정 조각",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/5wGpIRD2AKD",
+    "author": "Ashley Alicea",
+    "sizeKB": 20
+  },
+  {
+    "objKey": "diamond_ore",
+    "file": "assets/models/diamond_ore.glb",
+    "rarity": "epic",
+    "displayNameKo": "다이아몬드 원석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/6Y2ykcwTCH0",
+    "author": "Mark Steelman",
+    "sizeKB": 74
+  },
+  {
+    "objKey": "purple_crystal",
+    "file": "assets/models/purple_crystal.glb",
+    "rarity": "rare",
+    "displayNameKo": "보라 수정",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/7iHQpCXTb7",
+    "author": "iPoly3D",
+    "sizeKB": 9
+  },
+  {
+    "objKey": "stone_statue",
+    "file": "assets/models/stone_statue.glb",
+    "rarity": "epic",
+    "displayNameKo": "석상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0Mkdl3SJDT",
+    "author": "Zsky",
+    "sizeKB": 73
+  },
+  {
+    "objKey": "angel_statue",
+    "file": "assets/models/angel_statue.glb",
+    "rarity": "epic",
+    "displayNameKo": "천사 석상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/6v4CL0nKfT",
+    "author": "Zsky",
+    "sizeKB": 75
+  },
+  {
+    "objKey": "anubis_statue",
+    "file": "assets/models/anubis_statue.glb",
+    "rarity": "legendary",
+    "displayNameKo": "아누비스 석상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/9iPeQxL30oq",
+    "author": "Zach Miller",
+    "sizeKB": 85
+  },
+  {
+    "objKey": "ancient_monument",
+    "file": "assets/models/ancient_monument.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 기념비",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0un2vO8OCLn",
+    "author": "Yogoshimo 2.0",
+    "sizeKB": 14
+  },
+  {
+    "objKey": "colossus",
+    "file": "assets/models/colossus.glb",
+    "rarity": "legendary",
+    "displayNameKo": "거상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/1JrbPYnWdeA",
+    "author": "Darwin Yamamoto",
+    "sizeKB": 287
+  },
+  {
+    "objKey": "guardian_statue",
+    "file": "assets/models/guardian_statue.glb",
+    "rarity": "epic",
+    "displayNameKo": "수호신상",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/2aGRBnKMLmt",
+    "author": "apelab",
+    "sizeKB": 115
+  },
+  {
+    "objKey": "ancient_shrine",
+    "file": "assets/models/ancient_shrine.glb",
+    "rarity": "epic",
+    "displayNameKo": "고대 신전",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/a68qNnAC4m-",
+    "author": "Aidan K McLaughlin",
+    "sizeKB": 22
+  },
+  {
+    "objKey": "eight_vases",
+    "file": "assets/models/eight_vases.glb",
+    "rarity": "rare",
+    "displayNameKo": "고대 항아리 무리",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/083bnosQpkP",
+    "author": "Paul Spooner",
+    "sizeKB": 67
+  },
+  {
+    "objKey": "ancient_vase",
+    "file": "assets/models/ancient_vase.glb",
+    "rarity": "rare",
+    "displayNameKo": "고대 화병",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/20LOTk3BnjO",
+    "author": "Poly by Google",
+    "sizeKB": 16
+  },
+  {
+    "objKey": "battle_axe",
+    "file": "assets/models/battle_axe.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "전투 도끼",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/0joKOIPbu7",
+    "author": "Mobolaji",
+    "sizeKB": 32
+  },
+  {
+    "objKey": "mystical_weapon",
+    "file": "assets/models/mystical_weapon.glb",
+    "rarity": "epic",
+    "displayNameKo": "신비한 무기",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/4x6kXTt6ZL",
+    "author": "MaverickFX",
+    "sizeKB": 35
+  },
+  {
+    "objKey": "human_skull",
+    "file": "assets/models/human_skull.glb",
+    "rarity": "epic",
+    "displayNameKo": "두개골",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/738EKrsYz96",
+    "author": "Ian Wall",
+    "sizeKB": 16
+  },
+  {
+    "objKey": "shark_tooth",
+    "file": "assets/models/shark_tooth.glb",
+    "rarity": "rare",
+    "displayNameKo": "상어 이빨 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/6lZSwZSWTPw",
+    "author": "Poly by Google",
+    "sizeKB": 10
+  },
+  {
+    "objKey": "dino_skeleton",
+    "file": "assets/models/dino_skeleton.glb",
+    "rarity": "legendary",
+    "displayNameKo": "공룡 골격 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/7GKj5zdc1RZ",
+    "author": "jeremy",
+    "sizeKB": 40
+  },
+  {
+    "objKey": "google_dino",
+    "file": "assets/models/google_dino.glb",
+    "rarity": "legendary",
+    "displayNameKo": "공룡 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/f5AfWX7Fyeb",
+    "author": "Poly by Google",
+    "sizeKB": 21
+  },
+  {
+    "objKey": "ancient_octopus",
+    "file": "assets/models/ancient_octopus.glb",
+    "rarity": "rare",
+    "displayNameKo": "고대 문어 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/26XWuxd1G4R",
+    "author": "Poly by Google",
+    "sizeKB": 132
+  },
+  {
+    "objKey": "gold_trophy",
+    "file": "assets/models/gold_trophy.glb",
+    "rarity": "rare",
+    "displayNameKo": "황금 트로피",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/3EOEqKBvy4",
+    "author": "J-Toastie",
+    "sizeKB": 6
   }
 ]

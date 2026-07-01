@@ -183,9 +183,9 @@
     sword:{file:"sword.glb"},
     // dino: 원본(양자화) 파일이 렌더는 정상이나 스키닝 bind-pose bbox가 부정확 → dequantize본에서
     //  boneTransform으로 측정한 '실제 포즈 bbox'를 하드코딩(posedBox)해 정확히 fit·정렬. animate로 idle.
-    dino:{file:"dino.glb", animate:true, posedBox:{ sz:[7.96,14.68,30.88], c:[0,7.25,-1.0], minY:-0.09 }},
+    dino:{file:"dino.glb", animate:false, posedBox:{ sz:[7.96,14.68,30.88], c:[0,7.25,-1.0], minY:-0.09 }, layY:0.2},
     // velociraptor: 스키닝+양자화 + 리깅 특이로 posed-box 측정 불가 → 명시 fitScale·pos(육안 튜닝).
-    velociraptor:{file:"velociraptor.glb", animate:false, fitScale:0.9, pos:[0,0,0]},
+    velociraptor:{file:"velociraptor.glb", animate:false, fitScale:0.9, pos:[0,0,0], layY:0.2},
     chest:{file:"chest.glb"}, goldbag:{file:"goldbag.glb"}
   };
   // 구 regions.json obj키 → 신 모델 키 (loot 재구성 전 호환용 폴백)
@@ -286,6 +286,7 @@
   //  reveal/클리어는 이 footprint 위 흙 제거율로 계산하고, 실제 형태는 loadObjModel()이 씬에
   //  놓는 glb 모델이 담당한다(흙 아래 묻힘 → 파낼수록 깊이버퍼로 드러남 → 100%면 rise).
   const OBJ_FOOTPRINT_R = 5.6;                 // bed 원반 반경(월드) — 카메라 halfW 6.5 안
+  const OBJ_LAY_TILT = 0.14;                   // 눕힌 뒤 살짝 기울임(발굴된 듯 자연스럽게)
   const OBJ_BED_PEAK = 0.14;                   // bed 높이(정규화, ×START_DEPTH). 낮게=모델이 주인공
   const OBJ_BASE_Y = OBJ_BED_PEAK * START_DEPTH * HEIGHT_SCALE;   // 모델 밑면이 앉는 bed 표면(월드 Y)
   function buildObjTop() {
@@ -381,7 +382,21 @@
         if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
           if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
       });
-      grp.add(model);
+      // ── 눕히기(발굴 자세): 세워두면 어색 → 옆으로 뉘어 땅에 묻힌 듯(사용자 2026-07-01) ──
+      //  lay 그룹을 X축 -90° 회전해 Y-up 모델을 바닥에 눕히고, 최저점을 bed(grp 원점)에 접지.
+      const lay = new THREE.Group();
+      lay.rotation.x = -Math.PI / 2;
+      lay.rotation.z = OBJ_LAY_TILT;
+      lay.add(model);
+      lay.updateWorldMatrix(true, true);   // 독립 상태(부모 없음)에서 회전 반영
+      if (cfg.posedBox || cfg.fitScale) {
+        // 스키닝: setFromObject bind-pose 부정확 → 수동 y(육안 튜닝, 기본 살짝 띄움)
+        lay.position.y = (cfg.layY != null ? cfg.layY : 0.3);
+      } else {
+        const lb = new THREE.Box3().setFromObject(lay);   // 눕힌 실제 bbox
+        if (isFinite(lb.min.y)) lay.position.y = -lb.min.y;   // 바닥을 grp 원점(bed)에
+      }
+      grp.add(lay);
       // 애니는 기본 OFF: 스키닝 모델(T-Rex)은 rest pose로 렌더해야 fit(rest 기준 bounds)과 일치해
       //  정확히 보인다. 애니 재생은 rest와 포즈가 달라 정렬이 어긋나므로 cfg.animate일 때만.
       if (cfg.animate && gltf.animations && gltf.animations.length) {
