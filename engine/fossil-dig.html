@@ -192,8 +192,8 @@
     fight:"dino", footprint:"coin", plate:"coin" };
   function resolveObjKey(t) {
     if (MODEL_CFG[t]) return t;
-    if (OBJ_ALIAS[t] && MODEL_CFG[OBJ_ALIAS[t]]) return OBJ_ALIAS[t];
-    return "skull";
+    if (OBJ_ALIAS[t]) return OBJ_ALIAS[t];   // 구 키 매핑
+    return t || "skull";   // 그 외는 키=파일명 가정(대량 확장: assets/models/<key>.glb 동적 로드)
   }
 
   // 도구 기본값 — 레이어-재료: 각 도구는 담당 층만 제거(layer 지정), 층 하단서 멈춤.
@@ -339,8 +339,9 @@
   function loadObjModel() {
     const key = resolveObjKey(STAGE.object.type);
     window.__objKey = key;
-    const cfg = MODEL_CFG[key];
-    if (!cfg || typeof THREE.GLTFLoader === "undefined") return;
+    // MODEL_CFG는 '오버라이드'(스키닝 posedBox·애니 등)만. 없으면 키=파일명으로 동적 로드(300+ 확장).
+    const cfg = MODEL_CFG[key] || { file: key + ".glb" };
+    if (typeof THREE.GLTFLoader === "undefined") return;
     const grp = new THREE.Group();
     grp.position.set(0, OBJ_BASE_Y, 0);          // 밑면이 bed 표면에 앉음
     scene.add(grp);

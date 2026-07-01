@@ -356,19 +356,28 @@
     _meta: { rarityColors: { common:"#8a8f98", uncommon:"#4caf7d", rare:"#3d8bfd", epic:"#a259e6", legendary:"#f0a030" } },
     regions: {
       default: { label:"미지의 대지", flag:"🌍", bbox:null, loot:[
-        { obj:"ammonite", name:"암모나이트 화석", rarity:"common", weight:30, era:"중생대" },
-        { obj:"bone", name:"정체불명의 척추뼈", rarity:"uncommon", weight:20, era:"?" },
-        { obj:"dino_skull", name:"이름 없는 공룡 두개골", rarity:"rare", weight:12, era:"중생대" },
-        { obj:"relic", name:"수수께끼의 유물", rarity:"epic", weight:4, era:"?" }
+        { obj:"junk_bottle", name:"버려진 유리병", rarity:"common", weight:30, era:"현대" },
+        { obj:"junk_can", name:"찌그러진 깡통", rarity:"common", weight:28, era:"현대" },
+        { obj:"coin", name:"옛 동전", rarity:"uncommon", weight:18, era:"?" },
+        { obj:"gem", name:"푸른 보석", rarity:"uncommon", weight:16, era:"?" },
+        { obj:"shell", name:"암모나이트 화석", rarity:"rare", weight:10, era:"중생대" },
+        { obj:"vase", name:"고대 항아리", rarity:"rare", weight:9, era:"?" },
+        { obj:"skull", name:"정체불명의 두개골", rarity:"epic", weight:6, era:"?" },
+        { obj:"sword", name:"녹슨 검", rarity:"epic", weight:5, era:"?" },
+        { obj:"chest", name:"낡은 보물상자", rarity:"legendary", weight:3, era:"?" },
+        { obj:"dino", name:"이름 없는 공룡 화석", rarity:"legendary", weight:2, era:"중생대" }
       ]}
     }
   };
 
   // obj 타입 → 도감 아이콘(이모지). POC: 발굴게임 릴리프는 dino_skull 1종이나 라벨은 다양.
   const OBJ_ICON = {
+    // 신 12종(실물 3D 모델 키) — 도감/결과 카드 이모지
+    junk_bottle:"🍾", junk_can:"🥫", coin:"🪙", gem:"💎", shell:"🐚", vase:"🏺",
+    crown:"👑", skull:"💀", sword:"🗡️", dino:"🦖", chest:"🧰", goldbag:"💰",
+    // 구 키(폴백/하위호환)
     dino_skull:"🦖", bone:"🦴", egg:"🥚", claw:"🦅", tooth:"🦷", plate:"🛡️",
-    footprint:"🐾", fight:"⚔️", bird:"🪶", ammonite:"🐚", trilobite:"🦂",
-    relic:"🏺"
+    footprint:"🐾", fight:"⚔️", bird:"🪶", ammonite:"🐚", trilobite:"🦂", relic:"🏺"
   };
   const RARITY_LABEL = { common:"COMMON", uncommon:"UNCOMMON", rare:"RARE", epic:"EPIC", legendary:"LEGENDARY" };
   const RARITY_KR = { common:"흔함", uncommon:"제법", rare:"희귀", epic:"영웅", legendary:"전설" };

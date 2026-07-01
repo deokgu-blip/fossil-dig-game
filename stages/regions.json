@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "note": "지역별 발굴 loot 테이블. 국가 단위. rarity: common < uncommon < rare < epic < legendary. weight=가중치. obj=발굴게임 릴리프 타입(현 POC 엔진은 dino_skull 릴리프 1종만 실제 렌더; obj/name/rarity/region은 도감 기록·라벨용).",
+    "note": "지역별 발굴 loot 테이블. 국가 단위. rarity: common < uncommon < rare < epic < legendary. weight=가중치. obj=발굴 대상 실물 3D 모델 키(assets/models/<obj>.glb; 12종 CC0/CC-BY). name/rarity/region은 도감 기록·라벨용. 흔함=쓰레기(병/깡통) → 전설=공룡·황금유물.",
     "rarityColors": {
       "common": "#8a8f98",
       "uncommon": "#4caf7d",
@@ -20,14 +20,16 @@
       "flag": "🇰🇷",
       "bbox": [33.0, 124.5, 39.5, 131.0],
       "loot": [
-        { "obj": "dino_skull", "name": "코리아케라톱스 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
-        { "obj": "dino_skull", "name": "부경고사우루스 척추뼈", "rarity": "rare", "weight": 10, "era": "백악기" },
-        { "obj": "footprint", "name": "해남 공룡 발자국 화석", "rarity": "uncommon", "weight": 16, "era": "백악기" },
-        { "obj": "egg", "name": "공룡알 둥지 화석", "rarity": "rare", "weight": 8, "era": "백악기" },
-        { "obj": "relic", "name": "신라 금관 조각", "rarity": "legendary", "weight": 3, "era": "삼국시대" },
-        { "obj": "relic", "name": "백제 금동대향로 파편", "rarity": "epic", "weight": 5, "era": "삼국시대" },
-        { "obj": "relic", "name": "고려청자 파편", "rarity": "uncommon", "weight": 18, "era": "고려" },
-        { "obj": "relic", "name": "빗살무늬 토기 조각", "rarity": "common", "weight": 28, "era": "신석기" }
+        { "obj": "junk_can", "name": "버려진 깡통", "rarity": "common", "weight": 28, "era": "현대" },
+        { "obj": "junk_bottle", "name": "깨진 소주병", "rarity": "common", "weight": 26, "era": "현대" },
+        { "obj": "coin", "name": "상평통보 엽전", "rarity": "uncommon", "weight": 20, "era": "조선" },
+        { "obj": "vase", "name": "고려청자 파편", "rarity": "uncommon", "weight": 18, "era": "고려" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 10, "era": "중생대" },
+        { "obj": "gem", "name": "옥 장신구", "rarity": "rare", "weight": 9, "era": "삼국시대" },
+        { "obj": "skull", "name": "코리아케라톱스 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "sword", "name": "삼국시대 환두대도", "rarity": "epic", "weight": 5, "era": "삼국시대" },
+        { "obj": "crown", "name": "신라 금관", "rarity": "legendary", "weight": 3, "era": "삼국시대" },
+        { "obj": "dino", "name": "부경고사우루스 골격", "rarity": "legendary", "weight": 2, "era": "백악기" }
       ]
     },
     "mongolia": {
@@ -35,14 +37,16 @@
       "flag": "🇲🇳",
       "bbox": [41.5, 87.5, 52.2, 119.9],
       "loot": [
-        { "obj": "dino_skull", "name": "벨로키랍토르 두개골", "rarity": "epic", "weight": 8, "era": "백악기" },
-        { "obj": "dino_skull", "name": "프로토케라톱스 두개골", "rarity": "rare", "weight": 14, "era": "백악기" },
-        { "obj": "dino_skull", "name": "오비랍토르 두개골", "rarity": "rare", "weight": 10, "era": "백악기" },
-        { "obj": "egg", "name": "오비랍토르 알둥지", "rarity": "epic", "weight": 6, "era": "백악기" },
-        { "obj": "dino_skull", "name": "타르보사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
-        { "obj": "claw", "name": "테리지노사우루스 발톱", "rarity": "epic", "weight": 5, "era": "백악기" },
-        { "obj": "fight", "name": "'싸우는 공룡' 화석", "rarity": "legendary", "weight": 2, "era": "백악기" },
-        { "obj": "bone", "name": "공룡 대퇴골 화석", "rarity": "common", "weight": 26, "era": "백악기" }
+        { "obj": "junk_bottle", "name": "버려진 유리병", "rarity": "common", "weight": 28, "era": "현대" },
+        { "obj": "junk_can", "name": "찌그러진 깡통", "rarity": "common", "weight": 26, "era": "현대" },
+        { "obj": "coin", "name": "옛 은화", "rarity": "uncommon", "weight": 20, "era": "원나라" },
+        { "obj": "gem", "name": "사막의 원석", "rarity": "uncommon", "weight": 16, "era": "?" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 10, "era": "중생대" },
+        { "obj": "vase", "name": "유목민 토기", "rarity": "rare", "weight": 9, "era": "청동기" },
+        { "obj": "skull", "name": "벨로키랍토르 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "sword", "name": "유목민의 검", "rarity": "epic", "weight": 5, "era": "중세" },
+        { "obj": "dino", "name": "타르보사우루스 골격", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "goldbag", "name": "칸의 금화 주머니", "rarity": "legendary", "weight": 2, "era": "몽골제국" }
       ]
     },
     "north_america": {
@@ -50,14 +54,16 @@
       "flag": "🇺🇸",
       "bbox": [24.0, -168.0, 71.5, -52.0],
       "loot": [
-        { "obj": "dino_skull", "name": "티라노사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
-        { "obj": "dino_skull", "name": "트리케라톱스 두개골", "rarity": "epic", "weight": 7, "era": "백악기" },
-        { "obj": "plate", "name": "스테고사우루스 골판", "rarity": "rare", "weight": 11, "era": "쥐라기" },
-        { "obj": "bone", "name": "브라키오사우루스 목뼈", "rarity": "rare", "weight": 9, "era": "쥐라기" },
-        { "obj": "claw", "name": "벨로키랍토르 발톱", "rarity": "uncommon", "weight": 16, "era": "백악기" },
-        { "obj": "dino_skull", "name": "알로사우루스 두개골", "rarity": "epic", "weight": 6, "era": "쥐라기" },
-        { "obj": "tooth", "name": "티렉스 이빨 화석", "rarity": "uncommon", "weight": 20, "era": "백악기" },
-        { "obj": "bone", "name": "공룡 갈비뼈 화석", "rarity": "common", "weight": 28, "era": "중생대" }
+        { "obj": "junk_can", "name": "찌그러진 콜라캔", "rarity": "common", "weight": 28, "era": "현대" },
+        { "obj": "junk_bottle", "name": "버려진 병", "rarity": "common", "weight": 26, "era": "현대" },
+        { "obj": "coin", "name": "옛 금화", "rarity": "uncommon", "weight": 20, "era": "개척시대" },
+        { "obj": "gem", "name": "원석 결정", "rarity": "uncommon", "weight": 16, "era": "?" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 10, "era": "중생대" },
+        { "obj": "vase", "name": "원주민 토기", "rarity": "rare", "weight": 9, "era": "선사시대" },
+        { "obj": "skull", "name": "트리케라톱스 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "sword", "name": "개척자의 검", "rarity": "epic", "weight": 5, "era": "개척시대" },
+        { "obj": "dino", "name": "티라노사우루스 골격", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "chest", "name": "개척자의 보물상자", "rarity": "legendary", "weight": 2, "era": "개척시대" }
       ]
     },
     "egypt": {
@@ -65,14 +71,16 @@
       "flag": "🇪🇬",
       "bbox": [22.0, 24.5, 31.9, 37.0],
       "loot": [
-        { "obj": "relic", "name": "투탕카멘 황금 마스크", "rarity": "legendary", "weight": 2, "era": "신왕국" },
-        { "obj": "relic", "name": "파라오 석관(사르코파구스)", "rarity": "epic", "weight": 6, "era": "신왕국" },
-        { "obj": "relic", "name": "카노푸스 단지", "rarity": "rare", "weight": 12, "era": "고왕국" },
-        { "obj": "relic", "name": "우샤브티 부장품 인형", "rarity": "uncommon", "weight": 18, "era": "중왕국" },
-        { "obj": "relic", "name": "스카라베 부적", "rarity": "common", "weight": 26, "era": "고대이집트" },
-        { "obj": "relic", "name": "로제타석 파편", "rarity": "epic", "weight": 5, "era": "프톨레마이오스" },
-        { "obj": "dino_skull", "name": "스피노사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
-        { "obj": "relic", "name": "상형문자 석판", "rarity": "uncommon", "weight": 16, "era": "고대이집트" }
+        { "obj": "junk_bottle", "name": "깨진 유리병", "rarity": "common", "weight": 26, "era": "현대" },
+        { "obj": "junk_can", "name": "버려진 깡통", "rarity": "common", "weight": 24, "era": "현대" },
+        { "obj": "coin", "name": "고대 주화", "rarity": "uncommon", "weight": 20, "era": "프톨레마이오스" },
+        { "obj": "gem", "name": "스카라베 부적", "rarity": "uncommon", "weight": 16, "era": "고대이집트" },
+        { "obj": "vase", "name": "카노푸스 단지", "rarity": "rare", "weight": 11, "era": "고왕국" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 8, "era": "중생대" },
+        { "obj": "crown", "name": "파라오의 관", "rarity": "epic", "weight": 6, "era": "신왕국" },
+        { "obj": "skull", "name": "고대인의 두개골", "rarity": "epic", "weight": 5, "era": "고대이집트" },
+        { "obj": "goldbag", "name": "파라오의 황금 주머니", "rarity": "legendary", "weight": 3, "era": "신왕국" },
+        { "obj": "chest", "name": "파라오의 보물함", "rarity": "legendary", "weight": 2, "era": "신왕국" }
       ]
     },
     "europe": {
@@ -80,14 +88,16 @@
       "flag": "🇪🇺",
       "bbox": [35.0, -11.0, 71.5, 40.0],
       "loot": [
-        { "obj": "bird", "name": "시조새(아르케옵테릭스) 화석", "rarity": "legendary", "weight": 3, "era": "쥐라기" },
-        { "obj": "dino_skull", "name": "이구아노돈 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
-        { "obj": "ammonite", "name": "암모나이트 화석", "rarity": "common", "weight": 28, "era": "중생대" },
-        { "obj": "relic", "name": "로마 은화 무더기", "rarity": "uncommon", "weight": 18, "era": "로마제국" },
-        { "obj": "relic", "name": "바이킹 은 브로치", "rarity": "rare", "weight": 11, "era": "바이킹" },
-        { "obj": "relic", "name": "켈트 황금 토크", "rarity": "epic", "weight": 5, "era": "철기시대" },
-        { "obj": "bone", "name": "매머드 엄니 화석", "rarity": "rare", "weight": 9, "era": "빙하기" },
-        { "obj": "trilobite", "name": "삼엽충 화석", "rarity": "common", "weight": 24, "era": "고생대" }
+        { "obj": "junk_bottle", "name": "낡은 와인병", "rarity": "common", "weight": 28, "era": "현대" },
+        { "obj": "junk_can", "name": "녹슨 깡통", "rarity": "common", "weight": 24, "era": "현대" },
+        { "obj": "coin", "name": "로마 은화", "rarity": "uncommon", "weight": 20, "era": "로마제국" },
+        { "obj": "gem", "name": "보석 원석", "rarity": "uncommon", "weight": 16, "era": "?" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 10, "era": "중생대" },
+        { "obj": "vase", "name": "고대 암포라", "rarity": "rare", "weight": 9, "era": "고대그리스" },
+        { "obj": "sword", "name": "기사의 검", "rarity": "epic", "weight": 6, "era": "중세" },
+        { "obj": "crown", "name": "왕가의 왕관", "rarity": "epic", "weight": 5, "era": "중세" },
+        { "obj": "dino", "name": "이구아노돈 골격", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "chest", "name": "해적의 보물상자", "rarity": "legendary", "weight": 2, "era": "대항해시대" }
       ]
     },
     "default": {
@@ -95,12 +105,16 @@
       "flag": "🌍",
       "bbox": null,
       "loot": [
-        { "obj": "ammonite", "name": "암모나이트 화석", "rarity": "common", "weight": 30, "era": "중생대" },
-        { "obj": "bone", "name": "정체불명의 척추뼈", "rarity": "uncommon", "weight": 20, "era": "?" },
-        { "obj": "dino_skull", "name": "이름 없는 공룡 두개골", "rarity": "rare", "weight": 12, "era": "중생대" },
-        { "obj": "relic", "name": "고대 토기 파편", "rarity": "common", "weight": 26, "era": "?" },
-        { "obj": "trilobite", "name": "삼엽충 화석", "rarity": "common", "weight": 22, "era": "고생대" },
-        { "obj": "relic", "name": "수수께끼의 유물", "rarity": "epic", "weight": 4, "era": "?" }
+        { "obj": "junk_bottle", "name": "버려진 유리병", "rarity": "common", "weight": 30, "era": "현대" },
+        { "obj": "junk_can", "name": "찌그러진 깡통", "rarity": "common", "weight": 28, "era": "현대" },
+        { "obj": "coin", "name": "옛 동전", "rarity": "uncommon", "weight": 18, "era": "?" },
+        { "obj": "gem", "name": "푸른 보석", "rarity": "uncommon", "weight": 16, "era": "?" },
+        { "obj": "shell", "name": "암모나이트 화석", "rarity": "rare", "weight": 10, "era": "중생대" },
+        { "obj": "vase", "name": "고대 항아리", "rarity": "rare", "weight": 9, "era": "?" },
+        { "obj": "skull", "name": "정체불명의 두개골", "rarity": "epic", "weight": 6, "era": "?" },
+        { "obj": "sword", "name": "녹슨 검", "rarity": "epic", "weight": 5, "era": "?" },
+        { "obj": "chest", "name": "낡은 보물상자", "rarity": "legendary", "weight": 3, "era": "?" },
+        { "obj": "dino", "name": "이름 없는 공룡 화석", "rarity": "legendary", "weight": 2, "era": "중생대" }
       ]
     }
   }
