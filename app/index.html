@@ -224,24 +224,39 @@
   const MAP_MAX_PITCH = 62;
   const noStyleQP = QP.has("nostyle");   // 헤드리스/오프라인 테스트: 벡터스타일 스킵(빈 배경)
 
-  // --- 피크민식 자연 디오라마 팔레트 (건물 없음 · 흙길/산길 · 어스톤+그린) ---
-  //   발굴(흙·자연) 테마와 조화: 따뜻한 어스톤 + 소프트 그린. 회색·원색 금지.
+  // --- 발굴현장(고고학) 디오라마 팔레트 (건물 없음 · 흙길/산길 · 건조한 어스톤) ---
+  //   화석/고고학 테마: 마른 흙·모래·바랜 풀이 섞인 발굴장 느낌. 잔디 일변도 → 건조 어스톤.
+  //   과하지 않게 — 여전히 아기자기하되 사막/발굴장 톤. 회색·원색 금지.
   const PAL = {
-    ground:   "#bcd191",   // 잔디 그린 베이스(피크민 디오라마 바닥)
-    earth:    "#d6bd8f",   // 흙/어스 패치(따뜻한 탄) — landcover bare/soil 등
-    grass:    "#aecb84",   // landcover grass/meadow — 은은한 그린
-    wood:     "#7fa85c",   // landcover wood/forest — 진한 숲 그린
-    park:     "#9cc26e",   // park fill — 부드러운 숲 그린
-    sand:     "#e3cea0",   // sand — 따뜻한 베이지
-    water:    "#8fd0e6",   // 소프트 연못/개천 블루
-    // 도로 = 흙길/트레일. 어스 탄/브라운 채움 + 살짝 밝은 케이싱("길만 지도 참고" 룩).
-    trailFill:  "#c9a56e", // 흙길 채움(어스 탄)
-    trailCase:  "#a37f4c", // 흙길 가장자리(진한 브라운, 다져진 길 느낌)
-    trailFillMinor:"#d4b47e", // 좁은 산길 채움(밝은 탄)
-    trailCaseMinor:"#b08d58"  // 좁은 산길 가장자리
+    ground:   "#cdba86",   // 마른 흙/모래 베이스(발굴장 바닥 — 잔디 대신 건조 어스)
+    earth:    "#c6a870",   // 흙/어스 패치(다져진 탄)
+    grass:    "#b7bd7c",   // landcover grass/meadow — 바랜 마른 풀(그린 낮춤)
+    wood:     "#9ca868",   // landcover wood/forest — 마른 관목 그린(채도 낮춤)
+    park:     "#b0b878",   // park fill — 바랜 초지
+    sand:     "#e0c99a",   // sand — 따뜻한 모래 베이지
+    water:    "#8fc7cf",   // 소프트 오아시스/개천 블루(살짝 탁하게)
+    // 도로 = 흙길/트레일. 다져진 어스 탄/브라운 채움 + 밝은 케이싱("길만 지도 참고" 룩).
+    trailFill:  "#c39c62", // 흙길 채움(어스 탄)
+    trailCase:  "#9a7440", // 흙길 가장자리(진한 브라운, 다져진 길 느낌)
+    trailFillMinor:"#cfae76", // 좁은 산길 채움(밝은 탄)
+    trailCaseMinor:"#a8834e"  // 좁은 산길 가장자리
   };
-  // park/wood 위에 흩뿌릴 로우폴리 식생 색(피크민 느낌 — Three.js)
-  const FOLIAGE = { leafA:0x6f9a4c, leafB:0x86ac5a, trunk:0x6b4a2c, bush:0x7ba455 };
+  // 발굴/고고학 프롭 팔레트(로우폴리 — Three.js). 돌회색/샌드/본아이보리/테라코타.
+  const PROP = {
+    stone:   0x9a938a,   // 바위/유적 돌회색
+    stoneHi: 0xb4ada2,   // 밝은 돌(하이라이트면)
+    stoneDk: 0x7d766d,   // 어두운 돌(그림자면)
+    sand:    0xd8c090,   // 흙무더기/모래 둔덕
+    bone:    0xe9e0c8,   // 반쯤 묻힌 뼈(본 아이보리)
+    boneDk:  0xd2c6a6,   // 뼈 그림자
+    terra:   0xb5623a,   // 깨진 토기(테라코타)
+    terraDk: 0x8f4a2c,   // 토기 그림자
+    stake:   0xc98a4a,   // 발굴 말뚝(나무 스테이크)
+    stakeTop:0xdd4b3e,   // 말뚝 머리(측량 붉은띠)
+    tent:    0xcbb48a,   // 발굴 텐트 캔버스(모래빛)
+    tentDk:  0x8a6f45,   // 텐트 폴/그림자
+    rope:    0xe8dcc0     // 측량 로프/깃발 끈
+  };
 
   // liberty의 sources(openmaptiles 벡터)만 받아 우리 자연 디오라마 레이어로 교체한 스타일 JSON을 만든다.
   // sourcesOverride 를 주면 그걸 쓰고, 없으면 하드코딩 소스로 폴백한다.
@@ -717,11 +732,14 @@
   // ==========================================================================
   function centerCameraOnPlayer(instant) {
     if (!map || player.lat == null) return;
-    const target = { center: [player.lng, player.lat], pitch: MAP_PITCH };
-    // bearing 부드럽게 이동방향 추종(선택). 급회전 방지 위해 easeTo에 맡김.
+    // ★ 카메라는 '중심 추종'만 한다. 사용자가 드래그로 돌린 bearing/pitch/zoom은 보존.
+    //   (첫 위치만 기본 시점으로 점프. 이후엔 center만 부드럽게 이동 → 회전/줌 상태 유지.)
+    const target = { center: [player.lng, player.lat] };
+    // bearing 이동방향 추종은 옵션(?followbearing)일 때만 — 기본은 사용자 드래그 회전 존중.
     if (QP.has("followbearing")) target.bearing = playerHeading;
     if (instant) {
       target.zoom = MAP_ZOOM;
+      target.pitch = MAP_PITCH;   // 최초 진입만 기본 3/4 시점으로 세팅
       map.jumpTo(target);
     } else {
       map.easeTo(Object.assign({ duration: 600, essential: true }, target));
@@ -745,6 +763,63 @@
       }
       return Object.keys(out).length ? out : null;
     } catch (e) { return null; }
+  }
+
+  // 단일 포인터(마우스/한 손가락) 드래그 = 화면 회전. (사용자 요청 3·4)
+  //   · deltaX → bearing 회전(좌우 드래그로 시점을 빙 돌림). 카메라 중심은 플레이어에 고정 유지.
+  //   · deltaY → pitch(위/아래로 기울기 — 선택). maxPitch 안에서 clamp.
+  //   dragPan/dragRotate(우클릭 요구)를 껐으므로, 캔버스 pointer 이벤트를 직접 받아 회전만 적용한다.
+  //   ★ 회전해도 map.setBearing/​setPitch는 center를 안 바꾸므로 플레이어 중심(추종)이 유지된다.
+  //   두 손가락(핀치 줌/회전)은 touchZoomRotate가 처리 → 손가락 1개일 때만 이 커스텀 회전이 동작.
+  function installDragRotate(m) {
+    const cv = m.getCanvas();
+    let dragging = false, lastX = 0, lastY = 0, activeId = null, touchCount = 0;
+    const BEARING_PER_PX = 0.35;   // 가로 1px 당 회전(도) — 한 화면폭 드래그로 넉넉히 한 바퀴 근처
+    const PITCH_PER_PX   = 0.22;   // 세로 1px 당 pitch(도)
+    // 진행 중인 애니(easeTo 추종)와 충돌 방지: 드래그 시작 시 관성/애니 정지.
+    function down(e) {
+      // 터치가 2개 이상이면 핀치(줌/회전) — 커스텀 단일 회전은 양보.
+      touchCount = (e.pointerType === "touch") ? (touchCount + 1) : touchCount;
+      if (e.pointerType === "touch" && touchCount > 1) { dragging = false; return; }
+      dragging = true; activeId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
+      try { m.stop(); } catch (_) {}
+      try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    function move(e) {
+      if (!dragging || e.pointerId !== activeId) return;
+      if (touchCount > 1) return;   // 핀치 중이면 회전 안 함
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      // 좌로 끌면(-dx) 시계방향으로 도는 자연스러운 매핑: bearing += dx*k
+      const nb = m.getBearing() + dx * BEARING_PER_PX;
+      // 상하 드래그로 pitch(위로 끌면 더 눕고 = pitch↑). clamp(0..maxPitch).
+      let np = m.getPitch() + dy * PITCH_PER_PX;
+      const maxP = (typeof MAP_MAX_PITCH === "number") ? MAP_MAX_PITCH : 62;
+      np = Math.max(0, Math.min(maxP, np));
+      m.setBearing(nb);
+      m.setPitch(np);
+      window.__dragRotated = true;
+      if (e.cancelable) e.preventDefault();
+    }
+    function up(e) {
+      if (e.pointerType === "touch") touchCount = Math.max(0, touchCount - 1);
+      if (e.pointerId === activeId) { dragging = false; activeId = null;
+        try { cv.releasePointerCapture(e.pointerId); } catch (_) {} }
+    }
+    cv.style.touchAction = "none";   // 브라우저 기본 스크롤/팬 제스처 차단(직접 처리)
+    cv.addEventListener("pointerdown", down);
+    cv.addEventListener("pointermove", move);
+    cv.addEventListener("pointerup", up);
+    cv.addEventListener("pointercancel", up);
+    // 헤드리스/QA: 코드로 회전 제스처를 흉내내는 훅(pointer 합성이 까다로워 직접 노출).
+    window.__simDragRotate = (dxPx, dyPx) => {
+      const nb = m.getBearing() + (dxPx||0) * BEARING_PER_PX;
+      let np = m.getPitch() + (dyPx||0) * PITCH_PER_PX;
+      const maxP = (typeof MAP_MAX_PITCH === "number") ? MAP_MAX_PITCH : 62;
+      np = Math.max(0, Math.min(maxP, np));
+      m.setBearing(nb); m.setPitch(np); window.__dragRotated = true;
+      return { bearing: m.getBearing(), pitch: m.getPitch() };
+    };
   }
 
   // liberty fetch로 얻은 소스로 '초기' 스타일을 만들어 생성자에 넘긴다(setStyle 재로딩 회피 —
@@ -774,9 +849,15 @@
         attributionControl: true,
         // 모바일 성능: DPR 캡(레티나에서 과부하 방지)
         pixelRatio: Math.min(window.devicePixelRatio || 1, 1.75),
-        // 사용자 상호작용은 살짝 제한(포켓몬고식: 회전/기울기 자유, 이동은 캐릭터 중심)
-        dragRotate: true,
+        // ★ 카메라 조작(사용자 요청):
+        //   · 드래그로 지도 이동(dragPan) 비활성화 — 카메라는 항상 플레이어 중심 추종.
+        //   · 드래그 = 화면 회전(bearing) — 아래 customDragRotate로 단일 포인터 드래그를 회전에 매핑.
+        //     MapLibre 기본 dragRotate는 우클릭/ctrl 필요라 끄고, 커스텀 핸들러로 대체.
+        //   · 줌 인/아웃(스크롤/핀치)은 유지. 핀치 회전은 touchZoomRotate로.
+        dragPan: false,
+        dragRotate: false,
         touchZoomRotate: true,
+        touchPitch: false,     // 핀치-두손가락 pitch는 끔(단일 드래그 상하로 pitch 대체)
         keyboard: false,
         fadeDuration: 0
       });
@@ -784,6 +865,11 @@
       console.warn("[map] MapLibre 생성 실패, 지도 없이 진행:", e && e.message);
       map = null; return;
     }
+    // 안전: 혹시 기본이 켜져 있으면 명시적으로 끈다(버전별 기본값 방어).
+    try { if (map.dragPan && map.dragPan.isEnabled()) map.dragPan.disable(); } catch (e) {}
+    try { if (map.dragRotate && map.dragRotate.isEnabled()) map.dragRotate.disable(); } catch (e) {}
+    // 단일 포인터 드래그 = bearing 회전(+ 상하 드래그 = pitch). 터치/마우스 공통.
+    installDragRotate(map);
 
     // ⚠️ 'load' 이벤트는 스타일 + '초기 가시 타일'까지 다 로드돼야 발화한다.
     //   OpenFreeMap 벡터타일이 (오프라인/헤드리스) 안 뜨면 load가 영영 안 올 수 있다.
@@ -899,8 +985,11 @@
   }
 
   // 절차적 애니메이션 갱신 (시간기반). walkAmt(0↔1)로 idle↔walk 블렌드.
-  //   walk: 다리 앞뒤 스윙 + 팔 반대위상 스윙 + 몸 상하 bob(2× 주기).
-  //   idle: 은은한 호흡 bob(상체만 아주 약간).  모든 값은 walkAmt로 스케일 → 튀지 않는 전환.
+  //   walk: 다리 앞뒤 큰 스윙 + 팔 반대위상 스윙 + 몸 상하 bob(2× 주기) + 살짝 앞으로 기울임.
+  //   idle: 은은한 호흡 bob(상체만 아주 약간) + 아주 미세한 발 무게중심 이동.
+  //   ★ 3/4 뒤 시점(pitch 55)에서 잘 보이도록 스윙 진폭을 크게(다리 ≈0.95rad, 팔 ≈0.85rad)
+  //     + 무릎 굽힘·전진 기울임을 추가해 "확실히 걷는" 실루엣을 만든다. 모든 값은 walkAmt로 스케일.
+  //   ★ QA: 실제 스윙 각도(charState.legSwing)를 노출해 '값이 실제로 반영되는지' 헤드리스 단언.
   function animateExplorer(nowMs) {
     const p = charState.parts;
     if (!p) return;
@@ -908,70 +997,185 @@
     const target = (nowMs - charState.lastMoveAt) < WALK_HOLD_MS ? 1 : 0;
     charState.walkAmt += (target - charState.walkAmt) * 0.15;
     if (charState.walkAmt < 0.02) charState.walkAmt = 0;
-    if (charState.walkAmt > 0.98) charState.walkAmt = 1;
+    if (charState.walkAmt > 0.985) charState.walkAmt = 1;
     charState.anim = charState.walkAmt >= 0.5 ? "walk" : "idle";
 
     const w = charState.walkAmt;
     const t = nowMs * 0.001;
     // 걷기 사이클(스텝 주파수 ≈ 2.4Hz 느낌)
     const cyc = t * 8.4;
-    const swing = Math.sin(cyc) * 0.6 * w;         // 다리/팔 스윙 진폭(rad)
-    // 다리: 좌/우 반대위상
-    if (p.legs[0]) p.legs[0].rotation.x =  swing;
-    if (p.legs[1]) p.legs[1].rotation.x = -swing;
-    // 팔: 다리 반대위상(대각선 걸음)
-    if (p.arms[0]) p.arms[0].rotation.x = -swing * 0.85;
-    if (p.arms[1]) p.arms[1].rotation.x =  swing * 0.85;
-    // 몸 bob: 걷기는 스텝 2배 주기로 상하, idle은 은은한 호흡
-    const walkBob = Math.abs(Math.sin(cyc)) * 0.06 * w;
-    const idleBob = Math.sin(t * 1.8) * 0.02 * (1 - w);
+    const sc = Math.sin(cyc);
+    // ★ 다리/팔 스윙 진폭 크게(3/4 뒤 시점에서 눈에 띄게). 다리 0.95rad(≈54°), 팔 0.85rad.
+    const legSwing = sc * 0.95 * w;
+    const armSwing = sc * 0.85 * w;
+    charState.legSwing = legSwing;   // QA: 실제 반영 각도
+    // 다리: 좌/우 반대위상 + 뒤로 뻗을 때 무릎 살짝(bootPivot 없으니 hip 스윙으로 대체)
+    if (p.legs[0]) p.legs[0].rotation.x =  legSwing;
+    if (p.legs[1]) p.legs[1].rotation.x = -legSwing;
+    // 팔: 다리 반대위상(대각선 걸음) — 크게 흔들어 활기
+    if (p.arms[0]) p.arms[0].rotation.x = -armSwing;
+    if (p.arms[1]) p.arms[1].rotation.x =  armSwing;
+    // 몸 bob: 걷기는 스텝 2배 주기로 뚜렷하게 상하, idle은 은은한 호흡
+    const walkBob = Math.abs(sc) * 0.14 * w;              // 진폭↑(0.06→0.14) 뚜렷한 bob
+    const idleBob = Math.sin(t * 1.7) * 0.022 * (1 - w);
     p.bodyGrp.position.z = walkBob + idleBob;
-    // 걷기 시 상체 좌우 살짝 롤(생동감)
-    p.bodyGrp.rotation.y = Math.sin(cyc) * 0.05 * w;
+    // 걷기 시: 상체 좌우 롤(생동감) + 전진 기울임(정면 +Y로 살짝 기울여 "나아가는" 느낌)
+    p.bodyGrp.rotation.y = sc * 0.09 * w;                 // 좌우 롤(0.05→0.09)
+    p.bodyGrp.rotation.x = 0.13 * w;                      // 전진 기울임(pitch, +Y 방향)
+    // 캐릭터 전체 살짝 상하(발 붙은 채 통짜 bob은 안 넣음 — bodyGrp만; grp는 정합 매트릭스 담당)
   }
 
-  // 피크민식 로우폴리 식생 링 — 탐험가 주변(반경 4~13m)에 나무·풀 무더기를 드문드문.
-  //  성능: 지오메트리/머티리얼 공유(재사용), 소수(나무 5 + 풀 9)만. depthTest는 상위에서 끔.
-  //  (park/wood '영역'을 정밀 매칭하진 않지만 자연 디오라마의 앰비언트 그린을 항상 제공 =
-  //   건물 없는 빈 맵의 허전함을 메우는 피크민 룩.)
-  function buildFoliageRing(THREE, parent) {
-    const matTrunk = new THREE.MeshStandardMaterial({ color: FOLIAGE.trunk, roughness: 0.9 });
-    const matLeafA = new THREE.MeshStandardMaterial({ color: FOLIAGE.leafA, roughness: 0.85 });
-    const matLeafB = new THREE.MeshStandardMaterial({ color: FOLIAGE.leafB, roughness: 0.85 });
-    const matBush  = new THREE.MeshStandardMaterial({ color: FOLIAGE.bush,  roughness: 0.85 });
-    // 공유 지오메트리(로우폴리)
-    const gTrunk = new THREE.CylinderGeometry(0.13, 0.18, 1.1, 6);
-    const gLeaf  = new THREE.ConeGeometry(0.85, 1.6, 7);       // 침엽수 느낌 원뿔 잎
-    const gBush  = new THREE.IcosahedronGeometry(0.55, 0);     // 로우폴리 풀 무더기
-    const foliage = new THREE.Group();
-    // 결정론적 스캐터(시드 고정 — 프레임마다 안 흔들림). 각도/반경 균등 분포.
+  // 발굴현장(고고학) 프롭 링 — 탐험가 주변(반경 4~13m)에 발굴/유적 프롭을 드문드문.
+  //  사용자 요청: "나무보다 고고학에 어울리는 배경". 나무·풀 스캐터를 제거하고
+  //  ①부서진 유적 기둥 ②바위/돌무더기 ③반쯤 묻힌 뼈(늑골/두개) ④깨진 토기 조각
+  //  ⑤발굴 말뚝(측량 스테이크) ⑥작은 발굴 텐트 — 6종을 결정론적 스캐터.
+  //  성능: 프롭 종류별 지오메트리/머티리얼 공유(재사용), 소수(≈15개)만. depthTest는 상위에서 끔.
+  //  각 프롭 팩토리는 로컬 그룹(Z-up, base at z=0)을 만들어 반환 → 스캐터가 위치/스케일/회전만.
+  function buildPropRing(THREE, parent) {
+    // --- 공유 머티리얼 (Z-up, 밝은/어두운 면 2톤으로 로우폴리 볼륨감) ---
+    const mat = (c, r) => new THREE.MeshStandardMaterial({ color: c, roughness: r==null?0.92:r, metalness: 0.0, flatShading: true });
+    const mStone = mat(PROP.stone), mStoneHi = mat(PROP.stoneHi), mStoneDk = mat(PROP.stoneDk),
+          mSand = mat(PROP.sand), mBone = mat(PROP.bone, 0.7), mBoneDk = mat(PROP.boneDk, 0.7),
+          mTerra = mat(PROP.terra), mTerraDk = mat(PROP.terraDk),
+          mStake = mat(PROP.stake, 0.85), mStakeTop = mat(PROP.stakeTop, 0.7),
+          mTent = mat(PROP.tent, 0.95), mTentDk = mat(PROP.tentDk, 0.9);
+    // --- 공유 지오메트리 (로우폴리, 재사용) ---
+    const gCol   = new THREE.CylinderGeometry(0.34, 0.4, 1, 8);      // 유적 기둥 드럼(높이1, 스케일로 조절)
+    const gColBase = new THREE.BoxGeometry(1.0, 1.0, 0.22);          // 기둥 사각 받침돌
+    const gRock  = new THREE.DodecahedronGeometry(0.55, 0);          // 로우폴리 바위
+    const gRockS = new THREE.IcosahedronGeometry(0.34, 0);           // 작은 돌
+    const gRib   = new THREE.TorusGeometry(0.28, 0.05, 5, 8, Math.PI); // 반원 늑골(땅에서 솟은 아치)
+    const gSkull = new THREE.SphereGeometry(0.34, 10, 8);            // 두개골 돔
+    const gEye   = new THREE.SphereGeometry(0.075, 6, 5);           // 두개골 눈구멍(어두운 홈)
+    const gShard = new THREE.CylinderGeometry(0.4, 0.44, 0.09, 12, 1, false, 0, Math.PI*0.8); // 토기 조각(호)
+    const gStake = new THREE.CylinderGeometry(0.05, 0.07, 1.1, 6);   // 측량 말뚝
+    const gStakeTop = new THREE.CylinderGeometry(0.09, 0.09, 0.16, 6);
+    const gTentFloor = new THREE.CircleGeometry(0.9, 16);            // (미사용 폴백)
+    const props = new THREE.Group();
+
+    // 부서진 유적 기둥(넘어진 드럼 + 서 있는 그루터기 + 받침돌) — 아기자기 폐허
+    function makeColumn() {
+      const g = new THREE.Group();
+      const base = new THREE.Mesh(gColBase, mStoneDk); base.rotation.x = Math.PI/2; base.position.set(0,0,0.11); g.add(base);
+      // 서 있는 그루터기(부러진 기둥 밑동)
+      const stump = new THREE.Mesh(gCol, mStone); stump.rotation.x = Math.PI/2; stump.scale.set(1,1,1.1); stump.position.set(-0.12,0,0.77); g.add(stump);
+      // 위 드럼 한 조각(살짝 어긋나게 얹힘)
+      const drum = new THREE.Mesh(gCol, mStoneHi); drum.rotation.x = Math.PI/2; drum.scale.set(0.94,0.94,0.45); drum.position.set(-0.02,0.05,1.42); g.add(drum);
+      // 넘어져 옆에 굴러떨어진 드럼(눕힌 원통 — Z-up이라 X축으로 눕힘)
+      const fallen = new THREE.Mesh(gCol, mStone); fallen.scale.set(0.9,0.9,0.5); fallen.position.set(0.85,0.2,0.28); g.add(fallen);
+      const fallen2 = new THREE.Mesh(gCol, mStoneDk); fallen2.scale.set(0.9,0.9,0.42); fallen2.position.set(1.35,0.05,0.28); g.add(fallen2);
+      return g;
+    }
+    // 돌무더기 (큰 바위 + 잔돌 몇 개)
+    function makeRockPile() {
+      const g = new THREE.Group();
+      const r0 = new THREE.Mesh(gRock, mStone); r0.rotation.set(0.3,0.5,0.2); r0.position.set(0,0,0.45); g.add(r0);
+      const r1 = new THREE.Mesh(gRockS, mStoneHi); r1.position.set(0.55,0.1,0.28); r1.rotation.set(0.4,0.2,0); g.add(r1);
+      const r2 = new THREE.Mesh(gRockS, mStoneDk); r2.position.set(-0.35,0.45,0.24); r2.scale.setScalar(0.8); g.add(r2);
+      const r3 = new THREE.Mesh(gRockS, mStone); r3.position.set(0.15,-0.5,0.2); r3.scale.setScalar(0.66); g.add(r3);
+      return g;
+    }
+    // 반쯤 묻힌 뼈 (두개골 + 늑골 아치 + 흙둔덕) — 발굴 하이라이트
+    function makeBones() {
+      const g = new THREE.Group();
+      // 흙둔덕(뼈가 반쯤 묻힌 모래 무더기)
+      const mound = new THREE.Mesh(gSkull, mSand); mound.scale.set(1.7,1.0,0.35); mound.position.set(0.25,0,0.1); g.add(mound);
+      // 두개골(살짝 묻힘 — 아래 절반은 둔덕에) + 눈구멍 2개 + 아래턱
+      const skull = new THREE.Mesh(gSkull, mBone); skull.scale.set(0.95,1.1,0.9); skull.position.set(-0.5,0,0.32); g.add(skull);
+      const jaw = new THREE.Mesh(gSkull, mBoneDk); jaw.scale.set(0.62,0.44,0.34); jaw.position.set(-0.5,0.3,0.16); g.add(jaw);
+      const eyeL = new THREE.Mesh(gEye, mTerraDk); eyeL.position.set(-0.62,0.32,0.36); g.add(eyeL);   // 어두운 눈구멍
+      const eyeR = new THREE.Mesh(gEye, mTerraDk); eyeR.position.set(-0.38,0.32,0.36); g.add(eyeR);
+      // 척추 라인(작은 뼈마디 몇 개) + 늑골 아치 4개(땅에서 솟은 반원, X축을 따라 나란히)
+      for (let i=0;i<4;i++){
+        const x = -0.02 + i*0.3;
+        // 척추 마디
+        const vert = new THREE.Mesh(gEye, mBoneDk); vert.scale.setScalar(1.1); vert.position.set(x,0,0.1); g.add(vert);
+        // 늑골 아치: 반토러스를 세워(평면=XZ) 위로 솟게. 로컬 X를 따라 배열.
+        const rib = new THREE.Mesh(gRib, mBone);
+        rib.rotation.y = Math.PI/2;    // 반원 평면을 YZ로 세움 → 아치가 좌우(Y)로 벌어지며 위로 솟음
+        rib.position.set(x, 0, 0.1); rib.scale.set(1 - i*0.06, 1 - i*0.06, 1 - i*0.06);
+        g.add(rib);
+      }
+      return g;
+    }
+    // 깨진 토기 조각 (테라코타 파편이 흩어짐)
+    function makePottery() {
+      const g = new THREE.Group();
+      const s0 = new THREE.Mesh(gShard, mTerra); s0.rotation.set(1.1,0.3,0); s0.position.set(0,0,0.1); g.add(s0);
+      const s1 = new THREE.Mesh(gShard, mTerraDk); s1.rotation.set(0.9,-0.6,0.4); s1.scale.setScalar(0.7); s1.position.set(0.5,0.2,0.08); g.add(s1);
+      const s2 = new THREE.Mesh(gShard, mTerra); s2.rotation.set(1.3,1.2,0.2); s2.scale.setScalar(0.55); s2.position.set(-0.3,0.45,0.06); g.add(s2);
+      return g;
+    }
+    // 발굴 말뚝(측량 스테이크) + 붉은 머리
+    function makeStake() {
+      const g = new THREE.Group();
+      const post = new THREE.Mesh(gStake, mStake); post.rotation.x = Math.PI/2; post.position.set(0,0,0.55); post.rotation.z = 0.06; g.add(post);
+      const top = new THREE.Mesh(gStakeTop, mStakeTop); top.rotation.x = Math.PI/2; top.position.set(0,0,1.12); g.add(top);
+      return g;
+    }
+    // 작은 발굴 텐트(A형 캔버스 + 폴)
+    function makeTent() {
+      const g = new THREE.Group();
+      // 캔버스: 삼각기둥 느낌 → 원뿔 4각 (ConeGeometry radialSegments 4)
+      const canvas = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.0, 4), mTent);
+      canvas.rotation.x = -Math.PI/2; canvas.rotation.z = Math.PI/4; canvas.position.set(0,0,0.5); g.add(canvas);
+      // 입구 어두운 삼각(플랩)
+      const flap = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.55, 3), mTentDk);
+      flap.rotation.x = -Math.PI/2; flap.position.set(0, 0.72, 0.28); g.add(flap);
+      return g;
+    }
+
+    // 결정론적 스캐터(시드 고정 — 프레임마다 안 흔들림). 각도/반경 균등 분포 + 겹침 회피.
     let seed = 20260701;
     const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-    // 나무 5그루
-    for (let i = 0; i < 5; i++) {
-      const ang = rnd() * Math.PI * 2, rad = 5 + rnd() * 8;
-      const tx = Math.cos(ang) * rad, ty = Math.sin(ang) * rad;
-      const tree = new THREE.Group();
-      const trunk = new THREE.Mesh(gTrunk, matTrunk); trunk.rotation.x = Math.PI/2; trunk.position.set(0, 0, 0.55); tree.add(trunk);
-      const leaf = new THREE.Mesh(gLeaf, rnd() > 0.5 ? matLeafA : matLeafB);
-      leaf.rotation.x = -Math.PI/2; leaf.position.set(0, 0, 1.55); tree.add(leaf);
-      const leaf2 = new THREE.Mesh(gLeaf, matLeafA); leaf2.rotation.x = -Math.PI/2;
-      leaf2.scale.setScalar(0.72); leaf2.position.set(0, 0, 2.15); tree.add(leaf2);
-      const sc = 0.8 + rnd() * 0.7; tree.scale.setScalar(sc);
-      tree.position.set(tx, ty, 0);
-      foliage.add(tree);
+    // 프롭 배치표: 종류별 개수(총 ≈15). factory + 개수 + 크기범위.
+    const plan = [
+      { make: makeColumn,   n: 2, sMin: 0.9,  sMax: 1.3,  rMin: 6, rMax: 12 },
+      { make: makeRockPile, n: 4, sMin: 0.8,  sMax: 1.4,  rMin: 4, rMax: 12 },
+      { make: makeBones,    n: 3, sMin: 0.85, sMax: 1.2,  rMin: 5, rMax: 11 },
+      { make: makePottery,  n: 3, sMin: 0.8,  sMax: 1.15, rMin: 4, rMax: 10 },
+      { make: makeStake,    n: 2, sMin: 0.9,  sMax: 1.15, rMin: 4, rMax: 9  },
+      { make: makeTent,     n: 1, sMin: 1.1,  sMax: 1.4,  rMin: 7, rMax: 11 }
+    ];
+    for (const it of plan) {
+      for (let i = 0; i < it.n; i++) {
+        const ang = rnd() * Math.PI * 2, rad = it.rMin + rnd() * (it.rMax - it.rMin);
+        const g = it.make();
+        g.position.set(Math.cos(ang) * rad, Math.sin(ang) * rad, 0);
+        g.rotation.z = rnd() * Math.PI * 2;            // 랜덤 방위(자연스럽게)
+        g.scale.setScalar(it.sMin + rnd() * (it.sMax - it.sMin));
+        g.userData.kind = it.make.name;
+        props.add(g);
+      }
     }
-    // 풀 무더기 9개
-    for (let i = 0; i < 9; i++) {
-      const ang = rnd() * Math.PI * 2, rad = 4 + rnd() * 9;
-      const bush = new THREE.Mesh(gBush, matBush);
-      const sc = 0.5 + rnd() * 0.6;
-      bush.scale.set(sc, sc, sc * 0.7);
-      bush.position.set(Math.cos(ang) * rad, Math.sin(ang) * rad, 0.28 * sc);
-      foliage.add(bush);
-    }
-    parent.add(foliage);
-    charState.foliage = foliage;
+    parent.add(props);
+    charState.props = props;   // (foliage 대체) QA/의미 갱신 — 발굴 프롭 그룹
+  }
+
+  // ★ 애니메이션 rAF 틱커 — render 경로와 독립. 항상 돌며 포즈를 갱신하고 repaint를 요청한다.
+  //   · walk/전환 중: 매 프레임 repaint(부드러운 60fps 걷기).
+  //   · 완전 idle(walkAmt=0 안정): 은은한 호흡을 위해 ~12fps로만 repaint(모바일 배터리 절약).
+  //   render 안에서 triggerRepaint를 부르던 기존 방식은 render 예외 1회로 루프가 죽는 위험이 있었다.
+  let _animRAF = 0, _lastIdleRepaint = 0;
+  function startAnimTicker() {
+    if (_animRAF) return;   // 멱등
+    const tick = () => {
+      _animRAF = requestAnimationFrame(tick);
+      const now = performance.now();
+      // 포즈/walkAmt 갱신(항상). 렌더 실패와 무관하게 애니 상태는 흐른다.
+      animateExplorer(now);
+      if (!map) return;
+      const moving = charState.walkAmt > 0.001;
+      if (moving) {
+        map.triggerRepaint();                 // 걷기/전환: 매 프레임
+      } else if (now - _lastIdleRepaint > 80) {
+        _lastIdleRepaint = now;               // 완전 idle: ~12fps 호흡만
+        map.triggerRepaint();
+      }
+      charState.ticks = (charState.ticks || 0) + 1;
+    };
+    _animRAF = requestAnimationFrame(tick);
+    window.__animTickerOn = true;
   }
 
   // 메트릭스 정합 CustomLayer. MapLibre가 프레임마다 matrix를 넘겨준다.
@@ -999,10 +1203,10 @@
             new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
           shadow.position.set(0, 0, 0.02);   // 발밑(Z-up이라 지면 살짝 위)
           three.explorer.add(shadow);
-          // 피크민식 자연 디오라마: 탐험가 주변에 로우폴리 나무/풀 무더기를 드문드문 배치.
+          // 고고학 발굴현장 디오라마: 탐험가 주변에 로우폴리 발굴 프롭(유적기둥·돌무더기·뼈·토기·말뚝·텐트)을 배치.
           //  캐릭터와 같은 지역 그룹(three.explorer)의 자식이라 같은 projection에 정합되고
-          //  플레이어를 따라 이동하는 앰비언트 식생 링을 이룬다(맵 지오메트리 쿼리 불필요 = 헤드리스 견고).
-          buildFoliageRing(THREE, three.explorer);
+          //  플레이어를 따라 이동하는 앰비언트 발굴장 링을 이룬다(맵 지오메트리 쿼리 불필요 = 헤드리스 견고).
+          buildPropRing(THREE, three.explorer);
           // 캐릭터는 지도 위에 '올라타' 보이도록 depth test 끄고 그린다(맵 지형에 하반신 가림 방지).
           three.explorer.traverse((o) => { if (o.material) { o.material.depthTest = false; o.material.depthWrite = false; o.renderOrder = 999; } });
           three.explorer.renderOrder = 999;
@@ -1010,6 +1214,13 @@
           three.renderer = new THREE.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true });
           three.renderer.autoClear = false;
           charState.three = three;
+          // ★ 애니메이션 틱커(핵심 수정): render 안에서 triggerRepaint를 부르면
+          //   render가 한 번이라도 예외로 죽으면 repaint 요청이 끊겨 캐릭터가 영구 정지한다
+          //   (= 사용자가 본 "애니 작동 안 함"의 주원인). → repaint 요청을 render 밖의
+          //   독립 rAF 루프로 분리한다. 이 루프는 매 프레임 animateExplorer로 walkAmt/포즈를
+          //   갱신하고 map.triggerRepaint()로 다음 프레임을 확실히 요청 → render 실패와 무관하게
+          //   애니 상태는 계속 흐른다. idle에서도 은은한 호흡을 위해 항상 도는(가벼운) 루프.
+          startAnimTicker();
         } catch (e) {
           console.warn("[char] Three.js CustomLayer 초기화 실패 → 마커 폴백", e && e.message);
           charState.useMarker = true;
@@ -1033,14 +1244,14 @@
           // 이동방향 회전(헤딩): Z축(업) 기준 yaw
           const yaw = new THREE.Matrix4().makeRotationZ(charState.headingRad);
           three.camera.projectionMatrix = m.multiply(l).multiply(yaw);
-          // 시간기반 절차 애니메이션(걷기/대기) — 매 프레임 파트 자세 갱신
+          // 포즈 갱신은 rAF 틱커가 담당(render 실패와 분리). 여기선 방어적으로 한 번 더 반영만.
           animateExplorer(performance.now());
           three.renderer.resetState();
           // 캐릭터를 맵 위에 얹기: depth 버퍼 클리어 후 depth test 없이 렌더(하반신 가림 방지)
           try { gl.clear(gl.DEPTH_BUFFER_BIT); } catch (e) {}
           three.renderer.render(three.scene, three.camera);
-          map.triggerRepaint();
           window.__charRendered = true;
+          charState.frames = (charState.frames || 0) + 1;
         } catch (e) {
           if (!charState.useMarker) {
             console.warn("[char] 렌더 실패 → 마커 폴백", e && e.message);
@@ -1300,11 +1511,27 @@
     charModel: () => charState.useMarker ? "marker" : (charState.parts ? "procedural" : null),
     charState: () => charState.anim,                 // "idle" | "walk"
     charWalkAmt: () => charState.walkAmt,            // 0(idle)↔1(walk)
+    // 실제 다리 스윙 각도(rad) — 애니가 파트에 실제 반영되는지 단언용
+    charLegSwing: () => (typeof charState.legSwing === "number" ? charState.legSwing : null),
+    charLegRotX: () => (charState.parts && charState.parts.legs[0]) ? charState.parts.legs[0].rotation.x : null,
+    charTicks: () => charState.ticks || 0,           // rAF 틱커 프레임 수(애니 루프 살아있음)
+    animTickerOn: () => !!window.__animTickerOn,
     // 테스트용: 이동/정지 강제(GPS 없이 walk/idle 전환 단언). walkAmt 스냅 + 상태 확정(프레임 무관).
     markMoved: () => { charState.lastMoveAt = performance.now(); charState.walkAmt = 1; charState.anim = "walk"; return charState.anim; },
     clearMoved: () => { charState.lastMoveAt = 0; charState.walkAmt = 0; charState.anim = "idle"; return charState.anim; },
-    // 식생(피크민 룩) 개수
-    foliageCount: () => charState.foliage ? charState.foliage.children.length : 0,
+    // 발굴/고고학 프롭(나무 대체) 개수 + 종류. (구 foliageCount 별칭 유지)
+    propCount: () => charState.props ? charState.props.children.length : 0,
+    foliageCount: () => charState.props ? charState.props.children.length : 0,   // 하위호환 별칭(의미=프롭)
+    propKinds: () => { try {
+        const t = {}; if (charState.props) for (const c of charState.props.children) { const k = c.userData.kind||"?"; t[k]=(t[k]||0)+1; } return t;
+      } catch(e){ return {}; } },
+    // === 카메라 조작 검증 ===
+    dragPanEnabled: () => { try { return !!(map && map.dragPan && map.dragPan.isEnabled()); } catch(e){ return null; } },
+    dragRotateEnabled: () => { try { return !!(map && map.dragRotate && map.dragRotate.isEnabled()); } catch(e){ return null; } },
+    dragRotated: () => !!window.__dragRotated,
+    simDragRotate: (dx, dy) => (window.__simDragRotate ? window.__simDragRotate(dx, dy) : null),
+    setZoom: (z) => { try { map.setZoom(z); return map.getZoom(); } catch(e){ return null; } },
+    setBearing: (b) => { try { map.setBearing(b); return map.getBearing(); } catch(e){ return null; } },
     // mock 좌표 강제 세팅
     setPos: (lat, lng) => { onPositionUpdate(lat, lng, 5); return player; },
     playerPos: () => ({ lat: player.lat, lng: player.lng }),
