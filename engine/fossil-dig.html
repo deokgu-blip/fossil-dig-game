@@ -148,26 +148,23 @@
   // ============================================================
   // STAGE DATA (POC 인라인 — 나중에 stages/*.json fetch로 교체)
   // ============================================================
-  //  ── 레이어-재료(layer-material) 모델 (2026-07-01, 손상 기믹 제거 후 재설계) ──
-  //  오브젝트 위에는 흙이 3개 층으로 나뉜다(soilAbove = soilTop - objTop 기준).
-  //   BULK(진갈색 겉흙)  : 삽만 판다 → MID 경계에서 멈춤.
-  //   MID (회갈색 단단층) : 끌만 판다 → FINE 경계에서 멈춤.
-  //   FINE(밝은 고운모래) : 붓만 판다 → objTop(깨끗 노출)까지.
-  //  각 도구는 자기 층만 제거하고 층 하단 경계에서 클램프 → 잘못된 순서면 no-op.
-  //  오브젝트는 절대 손상 안 됨(파고들기 자체가 불가). 강제 순서: 삽→끌→붓.
+  //  ── 단일 도구(삽 전용) 모델 (2026-07-01 재설계) ──
+  //  사용자 요청: 삽·끌·붓 구분 제거. 삽 하나로 오브젝트 위 흙을 objTop까지 전부 걷어낸다.
+  //  도구 UI도 표시하지 않는다(tools 1종이면 buildToolbar가 툴바를 숨김).
+  //  오브젝트는 절대 손상 안 됨(파고들기 자체가 불가 — soilTop이 objTop에서 클램프).
+  //  (구 레이어-재료 3층 게이트는 canDig에서 layer:"all"이면 무조건 통과로 우회.)
   const STAGE = {
     level: 1,
     grid: { cols: 72, rows: 96 },
-    object: { type: "dino_skull", placement: { x: 0.5, y: 0.5, scale: 0.8 }, tilt: 0.26 },
+    // scale 0.4 (구 0.8의 절반) — 화석 크기 절반(사용자 2026-07-01: "화석크기 절반정도 작게").
+    object: { type: "dino_skull", placement: { x: 0.5, y: 0.5, scale: 0.4 }, tilt: 0.26 },
     soil: {
       startDepth: 1.35,
-      // 층 경계(오브젝트 표면 위 남은 흙 = soilAbove, ×startDepth 정규화).
-      //  fineTop < midTop < (오브젝트 위 최소 겉흙 ≈0.82). 깊은 흙에서 삽→끌→붓이
-      //  자연스럽게 순서대로 필요하도록 튜닝. (fineTop 0.14, midTop 0.45)
+      // 층 경계는 셰이더 톤(겉흙/모래) 구분에만 남겨둠(도구 게이트는 미사용).
       fineTop: 0.30,
       midTop: 0.50
     },
-    tools: ["shovel", "chisel", "brush"],
+    tools: ["shovel"],
     clear: { revealFrac: 1.0 }
   };
 
@@ -177,7 +174,9 @@
   //  붓    : FINE 담당(마무리). objTop(0)까지 걷어냄. 두꺼운 층엔 no-op.
   //  layer=자기가 파는 층 id. 오브젝트 셀에서만 게이트 적용(비-오브젝트 흙은 아무 도구나 바닥까지).
   const TOOL_DEFS = {
-    shovel: { name: "삽",  ico: "🪏", radius: 6, depthPerStroke: 0.20,  layer: "bulk", haptic: 24, sfx: "shovel" },
+    // 삽 전용: layer:"all" → canDig 무조건 통과 + LAYER_FLOOR.all=0 → objTop까지 발굴.
+    shovel: { name: "삽",  ico: "🪏", radius: 6, depthPerStroke: 0.20,  layer: "all",  haptic: 24, sfx: "shovel" },
+    // (구 도구 — 미사용, 향후 스테이지 재활용 대비 정의만 보존)
     chisel: { name: "끌",  ico: "🔨", radius: 3, depthPerStroke: 0.075, layer: "mid",  haptic: 16, sfx: "chisel" },
     brush:  { name: "붓",  ico: "🖌️", radius: 5, depthPerStroke: 0.05,  layer: "fine", haptic: 8,  sfx: "brush" }
   };
@@ -186,7 +185,7 @@
   const FINE_TOP = STAGE.soil.fineTop * STAGE.soil.startDepth;   // ≈0.189
   const MID_TOP  = STAGE.soil.midTop  * STAGE.soil.startDepth;   // ≈0.608
   // 해당 도구가 어느 층까지 파는지(층 하단 경계). 도구가 이 값 아래로는 못 내려감.
-  const LAYER_FLOOR = { bulk: MID_TOP, mid: FINE_TOP, fine: 0 };
+  const LAYER_FLOOR = { all: 0, bulk: MID_TOP, mid: FINE_TOP, fine: 0 };
   // GRACE(hysteresis): 도구가 자기 밴드 + 위 밴드의 GRACE 슬라이스까지 처리 → 경계 근처 작은 잔여
   //  때문에 끌↔붓을 왔다갔다 하는 불편 제거(사용자 2026-07-01). 붓은 (FINE_TOP+GRACE) 이하를 objTop까지
   //  쭉 마무리 → 한 번 붓 잡으면 그 구역 끝. 여전히 두꺼운 겉흙(초기 soilAbove≥~0.82)엔 안 먹힘.
@@ -211,6 +210,7 @@
   //  삽=위쪽(경계 없음), 끌=FINE_TOP 위 ~ MID_TOP+GRACE, 붓=FINE_TOP+GRACE 이하. 겹침(overlap)이
   //  전환 빈도를 낮춘다(경계 근처는 두 도구 다 가능). floor(LAYER_FLOOR)에서 멈추는 건 그대로.
   function canDig(layer, soilAbove) {
+    if (layer === "all") return true;   // 삽 전용: 어떤 깊이든 objTop까지 발굴
     if (layer === "bulk") return soilAbove > MID_TOP + BAND_EPS;
     if (layer === "mid")  return soilAbove > FINE_TOP + BAND_EPS && soilAbove <= MID_TOP + LAYER_GRACE;
     return soilAbove <= FINE_TOP + LAYER_GRACE;   // fine(붓)
@@ -799,10 +799,14 @@
 
   function updateHUD() {
     const st = computeState();
+    const pct = Math.round(st.revealFrac * 100);
     document.getElementById("reveal-fill").style.width = (st.revealFrac * 100).toFixed(1) + "%";
-    document.getElementById("reveal-val").textContent = Math.round(st.revealFrac * 100) + "%";
+    document.getElementById("reveal-val").textContent = pct + "%";
 
-    if (!cleared && st.revealFrac >= STAGE.clear.revealFrac - 1e-6) {
+    // 클리어 판정: '표시값(반올림)이 100%면' 클리어. 표시 100% ↔ 실제 revealFrac(≈0.995~1.0)의
+    // 반올림 간극 때문에 "100% 표시인데 종료 안 됨" 버그(2026-07-01)를 없앤다. finishClear가
+    // 남은 흙 필름을 objTop까지 완전히 걷어 깨끗이 노출한 뒤 CLEAR로 이어지므로 조기 종료감 없음.
+    if (!cleared && pct >= 100) {
       cleared = true; finishClear();
     }
     return st;
@@ -1086,6 +1090,9 @@
   function buildToolbar() {
     const bar = document.getElementById("toolbar");
     bar.innerHTML = "";
+    // 단일 도구(삽 전용)면 도구 UI를 아예 표시하지 않는다(사용자 2026-07-01: "삽 UI는 넣지마").
+    if (STAGE.tools.length <= 1) { bar.style.display = "none"; return; }
+    bar.style.display = "";
     STAGE.tools.forEach((tk) => {
       const def = TOOL_DEFS[tk];
       const b = document.createElement("button");

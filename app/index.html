@@ -792,8 +792,8 @@
       lastX = e.clientX; lastY = e.clientY;
       // 좌로 끌면(-dx) 시계방향으로 도는 자연스러운 매핑: bearing += dx*k
       const nb = m.getBearing() + dx * BEARING_PER_PX;
-      // 상하 드래그로 pitch(위로 끌면 더 눕고 = pitch↑). clamp(0..maxPitch).
-      let np = m.getPitch() + dy * PITCH_PER_PX;
+      // 상하 드래그로 pitch(반전 매핑, 2026-07-01: 위로 끌면 세워보기 = pitch↓). clamp(0..maxPitch).
+      let np = m.getPitch() - dy * PITCH_PER_PX;
       const maxP = (typeof MAP_MAX_PITCH === "number") ? MAP_MAX_PITCH : 62;
       np = Math.max(0, Math.min(maxP, np));
       m.setBearing(nb);
@@ -814,7 +814,7 @@
     // 헤드리스/QA: 코드로 회전 제스처를 흉내내는 훅(pointer 합성이 까다로워 직접 노출).
     window.__simDragRotate = (dxPx, dyPx) => {
       const nb = m.getBearing() + (dxPx||0) * BEARING_PER_PX;
-      let np = m.getPitch() + (dyPx||0) * PITCH_PER_PX;
+      let np = m.getPitch() - (dyPx||0) * PITCH_PER_PX;
       const maxP = (typeof MAP_MAX_PITCH === "number") ? MAP_MAX_PITCH : 62;
       np = Math.max(0, Math.min(maxP, np));
       m.setBearing(nb); m.setPitch(np); window.__dragRotated = true;
@@ -1077,12 +1077,13 @@
     // 결정론적 스캐터(시드 고정 — 프레임마다 안 흔들림). 각도/반경 균등 분포 + 겹침 회피.
     let seed = 20260701;
     const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-    // 프롭 배치표: 종류별 개수(총 ≈15). factory + 개수 + 크기범위.
-    // 바위·풀·나무만, 훨씬 작게(scale ~0.3~0.55).
+    // 프롭 배치표: 종류별 개수(총 ≈24). factory + 개수 + 크기범위.
+    // 캐릭터(발~모자 ≈1.8units)보다 살짝 작게(2026-07-01): 나무 base 1.11→h≈1.35~1.65,
+    // 바위 base 0.52→h≈0.9~1.2, 풀 base 0.28→h≈0.65~0.9. 종류별 base가 달라 배율도 다름.
     const plan = [
-      { make: makeTree,  n: 6,  sMin: 0.34, sMax: 0.55, rMin: 4, rMax: 14 },
-      { make: makeRock,  n: 6,  sMin: 0.32, sMax: 0.55, rMin: 3, rMax: 14 },
-      { make: makeGrass, n: 12, sMin: 0.30, sMax: 0.50, rMin: 3, rMax: 14 }
+      { make: makeTree,  n: 6,  sMin: 1.2, sMax: 1.5, rMin: 4, rMax: 14 },
+      { make: makeRock,  n: 6,  sMin: 1.7, sMax: 2.3, rMin: 3, rMax: 14 },
+      { make: makeGrass, n: 12, sMin: 2.2, sMax: 3.1, rMin: 3, rMax: 14 }
     ];
     for (const it of plan) {
       for (let i = 0; i < it.n; i++) {
@@ -1472,6 +1473,20 @@
     propKinds: () => { try {
         const t = {}; if (charState.props) for (const c of charState.props.children) { const k = c.userData.kind||"?"; t[k]=(t[k]||0)+1; } return t;
       } catch(e){ return {}; } },
+    // 프롭 높이 vs 캐릭터 높이(같은 부모 그룹 → 같은 스케일 공간, 비율 유효).
+    //  charTop=모자 꼭대기 world z, tallestProp=가장 큰 프롭 꼭대기 z. ratio<1이면 캐릭터보다 작음.
+    propSizeVsChar: () => { try {
+        if (!charState.parts || !charState.props || typeof THREE === "undefined") return null;
+        charState.parts.grp.updateWorldMatrix(true, true);
+        const cbox = new THREE.Box3().setFromObject(charState.parts.bodyGrp);
+        const charTop = cbox.max.z;
+        let tallest = 0;
+        for (const p of charState.props.children) {
+          const b = new THREE.Box3().setFromObject(p);
+          if (isFinite(b.max.z) && b.max.z > tallest) tallest = b.max.z;
+        }
+        return { charTop, tallestProp: tallest, ratio: charTop ? tallest / charTop : null };
+      } catch(e){ return { err: String(e) }; } },
     // === 카메라 조작 검증 ===
     dragPanEnabled: () => { try { return !!(map && map.dragPan && map.dragPan.isEnabled()); } catch(e){ return null; } },
     dragRotateEnabled: () => { try { return !!(map && map.dragRotate && map.dragRotate.isEnabled()); } catch(e){ return null; } },
