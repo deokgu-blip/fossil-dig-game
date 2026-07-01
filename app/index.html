@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>Fossil Dig — 발굴 지도</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9B%8F%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../vendor/leaflet/leaflet.css">
+<style>
+  :root {
+    --bg:#20160d; --panel:#2a1d12; --panel2:#37271a; --line:rgba(255,255,255,.08);
+    --gold:#f0c674; --cream:#e8d9bc; --sub:#b7a586;
+    --c-common:#8a8f98; --c-uncommon:#4caf7d; --c-rare:#3d8bfd; --c-epic:#a259e6; --c-legendary:#f0a030;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--cream);
+    user-select:none; -webkit-user-select:none; }
+  #map { position:fixed; inset:0; z-index:1; background:#3a4a3a; }
+  .leaflet-container { background:#33403a; font-family:inherit; }
+
+  /* 상단 헤더 */
+  #topbar { position:fixed; left:0; right:0; top:0; z-index:1000;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;
+    display:flex; align-items:center; gap:10px; pointer-events:none;
+    background:linear-gradient(180deg,rgba(20,14,8,.82),rgba(20,14,8,0)); }
+  #region-chip { pointer-events:auto; background:rgba(30,20,12,.82); border:1px solid var(--line);
+    border-radius:20px; padding:7px 14px; font-size:14px; font-weight:700; letter-spacing:.2px;
+    display:flex; align-items:center; gap:6px; backdrop-filter:blur(4px); }
+  #region-chip .flag { font-size:16px; }
+  .spacer { flex:1; }
+  .icon-btn { pointer-events:auto; width:44px; height:44px; border-radius:14px;
+    background:rgba(30,20,12,.82); border:1px solid var(--line); color:var(--cream);
+    font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    backdrop-filter:blur(4px); }
+  .icon-btn:active { transform:scale(.92); }
+
+  /* 하단 발견 버튼 */
+  #discover-bar { position:fixed; left:0; right:0; bottom:0; z-index:1000;
+    padding:14px 18px calc(env(safe-area-inset-bottom,0px) + 18px);
+    display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;
+    background:linear-gradient(0deg,rgba(20,14,8,.85),rgba(20,14,8,0)); }
+  #discover-btn { pointer-events:auto; width:100%; max-width:420px;
+    background:linear-gradient(180deg,#ffd884,#f0a030); color:#3a2408; border:none;
+    border-radius:18px; padding:16px; font-size:19px; font-weight:800; letter-spacing:.3px;
+    cursor:pointer; box-shadow:0 8px 24px rgba(240,160,48,.45); display:none;
+    align-items:center; justify-content:center; gap:8px; }
+  #discover-btn.show { display:flex; animation:pulse 1.4s ease-in-out infinite; }
+  #discover-btn:active { transform:scale(.97); }
+  @keyframes pulse { 0%,100%{ box-shadow:0 8px 24px rgba(240,160,48,.45);} 50%{ box-shadow:0 8px 34px rgba(240,160,48,.85);} }
+  #hint { pointer-events:none; font-size:12.5px; color:var(--sub); background:rgba(20,14,8,.6);
+    padding:5px 12px; border-radius:12px; text-align:center; max-width:90%; }
+
+  /* mock 컨트롤 (개발용) */
+  #mock-pad { position:fixed; right:14px; bottom:calc(env(safe-area-inset-bottom,0px) + 120px);
+    z-index:1000; display:none; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(3,44px);
+    gap:4px; }
+  #mock-pad.show { display:grid; }
+  #mock-pad button { border-radius:11px; background:rgba(30,20,12,.86); border:1px solid var(--line);
+    color:var(--cream); font-size:18px; cursor:pointer; }
+  #mock-pad button:active { background:var(--gold); color:#3a2408; }
+  #mock-pad .mid { background:rgba(60,42,26,.9); }
+  #mock-badge { position:fixed; left:14px; bottom:calc(env(safe-area-inset-bottom,0px) + 120px);
+    z-index:1000; display:none; background:rgba(120,60,20,.9); color:#ffe6c0; font-size:11px;
+    font-weight:800; padding:5px 10px; border-radius:10px; letter-spacing:.5px; }
+  #mock-badge.show { display:block; }
+
+  /* 발굴게임 iframe 오버레이 */
+  #dig-overlay { position:fixed; inset:0; z-index:2000; display:none; background:#1a130c; }
+  #dig-overlay.show { display:block; }
+  #dig-frame { width:100%; height:100%; border:0; display:block; }
+  #dig-close { position:fixed; top:calc(env(safe-area-inset-top,0px) + 10px); left:12px; z-index:2100;
+    width:40px; height:40px; border-radius:12px; background:rgba(20,14,8,.7); color:#fff; border:1px solid var(--line);
+    font-size:20px; cursor:pointer; display:none; }
+  #dig-overlay.show #dig-close { display:block; }
+
+  /* 발견 결과 토스트 */
+  #result { position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
+    background:rgba(10,7,4,.78); backdrop-filter:blur(4px); padding:26px; }
+  #result.show { display:flex; animation:fade .35s ease; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+  .result-card { width:100%; max-width:360px; background:linear-gradient(180deg,#3a2a1b,#26190f);
+    border:1px solid var(--line); border-radius:22px; padding:26px 22px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .result-card .eyebrow { font-size:13px; color:var(--gold); font-weight:800; letter-spacing:2px; }
+  .result-card .icon { font-size:64px; margin:12px 0 6px; }
+  .result-card .name { font-size:23px; font-weight:800; margin-bottom:4px; }
+  .result-card .meta { font-size:13.5px; color:var(--sub); margin-bottom:16px; }
+  .rarity-badge { display:inline-block; font-size:12px; font-weight:800; letter-spacing:.5px;
+    padding:4px 12px; border-radius:20px; margin-bottom:16px; }
+  .result-card button { width:100%; background:var(--gold); color:#3a2408; border:none; border-radius:14px;
+    padding:14px; font-size:16px; font-weight:800; cursor:pointer; }
+  .result-card button:active { transform:scale(.97); }
+
+  /* 도감 화면 */
+  #collection { position:fixed; inset:0; z-index:3000; display:none; flex-direction:column;
+    background:var(--bg); }
+  #collection.show { display:flex; }
+  #col-head { padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px; display:flex; align-items:center; gap:12px;
+    border-bottom:1px solid var(--line); background:var(--panel); }
+  #col-head h1 { font-size:19px; font-weight:800; }
+  #col-head .count { margin-left:auto; font-size:13px; color:var(--sub); }
+  #col-back { width:40px; height:40px; border-radius:12px; background:var(--panel2); color:var(--cream);
+    border:1px solid var(--line); font-size:20px; cursor:pointer; }
+  #col-grid { flex:1; overflow-y:auto; padding:14px; display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; align-content:start; }
+  .col-card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 12px;
+    text-align:center; position:relative; }
+  .col-card.locked { opacity:.55; }
+  .col-card .cc-icon { font-size:40px; line-height:1; margin-bottom:6px;
+    filter:none; }
+  .col-card.locked .cc-icon { filter:brightness(0) invert(.3); }
+  .col-card .cc-name { font-size:13px; font-weight:700; min-height:34px; display:flex; align-items:center; justify-content:center; }
+  .col-card .cc-region { font-size:11px; color:var(--sub); margin-top:3px; }
+  .col-card .cc-qty { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.4); border-radius:10px;
+    font-size:11px; font-weight:800; padding:2px 7px; }
+  .col-card .cc-rarity { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.4px;
+    padding:2px 8px; border-radius:10px; margin-top:6px; }
+  .col-empty { grid-column:1/-1; text-align:center; color:var(--sub); padding:60px 20px; font-size:14px; }
+
+  /* 로딩/토스트 */
+  #toast { position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 70px); transform:translateX(-50%);
+    z-index:1500; background:rgba(20,14,8,.9); border:1px solid var(--line); color:var(--cream);
+    padding:9px 16px; border-radius:20px; font-size:13px; font-weight:600; opacity:0; transition:opacity .3s;
+    pointer-events:none; max-width:88%; text-align:center; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="topbar">
+  <div id="region-chip"><span class="flag">🌍</span><span id="region-name">위치 확인 중…</span></div>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="btn-locate" title="내 위치">📍</button>
+  <button class="icon-btn" id="btn-collection" title="도감">📖</button>
+</div>
+
+<div id="mock-badge" class="">MOCK GPS</div>
+<div id="mock-pad">
+  <span></span><button data-dir="n">▲</button><span></span>
+  <button data-dir="w">◀</button><button class="mid" data-dir="c">◎</button><button data-dir="e">▶</button>
+  <span></span><button data-dir="s">▼</button><span></span>
+</div>
+
+<div id="discover-bar">
+  <div id="hint"></div>
+  <button id="discover-btn"><span>⛏️</span><span id="discover-label">발견!</span></button>
+</div>
+
+<div id="dig-overlay">
+  <button id="dig-close">✕</button>
+  <iframe id="dig-frame" allow="fullscreen"></iframe>
+</div>
+
+<div id="result">
+  <div class="result-card">
+    <div class="eyebrow">발굴 성공</div>
+    <div class="icon" id="r-icon">🦴</div>
+    <div class="name" id="r-name">화석</div>
+    <div class="rarity-badge" id="r-rarity">COMMON</div>
+    <div class="meta" id="r-meta"></div>
+    <button id="r-ok">도감에 수집!</button>
+  </div>
+</div>
+
+<div id="collection">
+  <div id="col-head">
+    <button id="col-back">‹</button>
+    <h1>발굴 도감</h1>
+    <span class="count" id="col-count"></span>
+  </div>
+  <div id="col-grid"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="../vendor/leaflet/leaflet.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ==========================================================================
+  // 설정
+  // ==========================================================================
+  const QP = new URLSearchParams(location.search);
+  const MOCK = QP.has("mock") ? (QP.get("mock") !== "0") : false;   // ?mock=1 → 개발용 가짜 GPS
+  const DIG_URL = "../engine/fossil-dig.html";                       // 발굴게임 (상대경로, 이중타깃 호환)
+  const REGIONS_URL = "../stages/regions.json";
+  const DISCOVER_RADIUS_M = 40;    // 이 거리 안이면 "발견" 가능
+  const SPOT_COUNT = 5;            // 플레이어 주변 스폰 지점 수
+  const SPOT_MIN_M = 60, SPOT_MAX_M = 320;   // 스폰 반경(미터)
+  const COOLDOWN_MS = 20000;       // 발굴 후 그 지점 재등장 쿨다운(POC: 제거 후 재스폰)
+  const LS_COLLECTION = "fossildig_collection";
+  const LS_PENDING = "fossildig_pending";     // 발굴게임이 이중기록하는 큐(L22 폴백)
+
+  // 지역 loot 테이블 (fetch 실패 시 인라인 폴백 사용)
+  let REGIONS = null;
+  const REGIONS_FALLBACK = {
+    _meta: { rarityColors: { common:"#8a8f98", uncommon:"#4caf7d", rare:"#3d8bfd", epic:"#a259e6", legendary:"#f0a030" } },
+    regions: {
+      default: { label:"미지의 대지", flag:"🌍", bbox:null, loot:[
+        { obj:"ammonite", name:"암모나이트 화석", rarity:"common", weight:30, era:"중생대" },
+        { obj:"bone", name:"정체불명의 척추뼈", rarity:"uncommon", weight:20, era:"?" },
+        { obj:"dino_skull", name:"이름 없는 공룡 두개골", rarity:"rare", weight:12, era:"중생대" },
+        { obj:"relic", name:"수수께끼의 유물", rarity:"epic", weight:4, era:"?" }
+      ]}
+    }
+  };
+
+  // obj 타입 → 도감 아이콘(이모지). POC: 발굴게임 릴리프는 dino_skull 1종이나 라벨은 다양.
+  const OBJ_ICON = {
+    dino_skull:"🦖", bone:"🦴", egg:"🥚", claw:"🦅", tooth:"🦷", plate:"🛡️",
+    footprint:"🐾", fight:"⚔️", bird:"🪶", ammonite:"🐚", trilobite:"🦂",
+    relic:"🏺"
+  };
+  const RARITY_LABEL = { common:"COMMON", uncommon:"UNCOMMON", rare:"RARE", epic:"EPIC", legendary:"LEGENDARY" };
+  const RARITY_KR = { common:"흔함", uncommon:"제법", rare:"희귀", epic:"영웅", legendary:"전설" };
+
+  // ==========================================================================
+  // 상태
+  // ==========================================================================
+  let map, playerMarker, playerCircle;
+  let spots = [];              // { id, lat, lng, marker, item, cooldownUntil }
+  let player = { lat: null, lng: null, acc: null };
+  let curRegionKey = "default";
+  let curRegionMeta = { label:"미지의 대지", flag:"🌍" };
+  let activeSpot = null;       // 현재 발굴 중인 spot
+  let mockWatchTimer = null;
+  let geocodeTimer = 0;
+  let lastGeocodeAt = 0;
+
+  // ==========================================================================
+  // 유틸
+  // ==========================================================================
+  function haversine(a, b, c, d) {   // (lat1,lng1,lat2,lng2) → meters
+    const R = 6371000, toR = Math.PI/180;
+    const dLat = (c-a)*toR, dLng = (d-b)*toR;
+    const s = Math.sin(dLat/2)**2 + Math.cos(a*toR)*Math.cos(c*toR)*Math.sin(dLng/2)**2;
+    return 2*R*Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+  // 미터만큼 떨어진 지점 offset (근사; 소반경이라 충분)
+  function offsetMeters(lat, lng, dN, dE) {
+    const dLat = dN / 111320;
+    const dLng = dE / (111320 * Math.cos(lat * Math.PI/180));
+    return [lat + dLat, lng + dLng];
+  }
+  function rand(a, b) { return a + Math.random()*(b-a); }
+  function toast(msg, ms) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), ms||2200);
+  }
+  function rarityColor(r) {
+    const c = (REGIONS && REGIONS._meta && REGIONS._meta.rarityColors) || REGIONS_FALLBACK._meta.rarityColors;
+    return c[r] || "#8a8f98";
+  }
+
+  // ==========================================================================
+  // 지역 판정 (역지오코딩 → coarse bbox 폴백 → default)
+  // ==========================================================================
+  const COUNTRY_TO_REGION = {
+    "kr":"korea", "mn":"mongolia", "eg":"egypt",
+    "us":"north_america", "ca":"north_america", "mx":"north_america"
+  };
+  const EUROPE_CC = new Set(["gb","fr","de","es","it","pt","nl","be","ch","at","se","no","fi","dk",
+    "ie","pl","cz","sk","hu","ro","gr","hr","rs","ua","is","lu","si","bg","ee","lv","lt"]);
+
+  function regionFromCC(cc) {
+    if (!cc) return null;
+    cc = cc.toLowerCase();
+    if (COUNTRY_TO_REGION[cc]) return COUNTRY_TO_REGION[cc];
+    if (EUROPE_CC.has(cc)) return "europe";
+    return null;
+  }
+  // 좌표 bbox 폴백 (오프라인/지오코드 실패 시). regions.json의 bbox=[minLat,minLng,maxLat,maxLng].
+  function regionFromBBox(lat, lng) {
+    const rs = (REGIONS && REGIONS.regions) || {};
+    for (const key in rs) {
+      const bb = rs[key].bbox;
+      if (!bb) continue;
+      if (lat>=bb[0] && lat<=bb[2] && lng>=bb[1] && lng<=bb[3]) return key;
+    }
+    return "default";
+  }
+  // 단일 진입점: 좌표 → 지역키. Nominatim reverse 우선, 실패 시 bbox.
+  async function resolveRegion(lat, lng) {
+    // Nominatim reverse (User-Agent 헤더). CORS/네트워크 실패 시 catch → bbox.
+    try {
+      const url = "https://nominatim.openstreetmap.org/reverse?format=json&zoom=3&addressdetails=1&lat="
+        + lat + "&lon=" + lng;
+      const ctrl = new AbortController();
+      const to = setTimeout(()=>ctrl.abort(), 6000);
+      const res = await fetch(url, {
+        headers: { "Accept":"application/json" },   // UA는 브라우저가 강제(설정 불가) → 서버 정책상 허용됨
+        signal: ctrl.signal
+      });
+      clearTimeout(to);
+      if (res.ok) {
+        const j = await res.json();
+        const cc = j && j.address && j.address.country_code;
+        const key = regionFromCC(cc);
+        if (key) return { key, source:"nominatim", country: j.address && j.address.country };
+      }
+    } catch (e) { /* graceful → bbox */ }
+    return { key: regionFromBBox(lat, lng), source:"bbox" };
+  }
+
+  function setRegion(key) {
+    curRegionKey = key;
+    const rs = (REGIONS && REGIONS.regions) || {};
+    curRegionMeta = rs[key] || REGIONS_FALLBACK.regions.default;
+    document.querySelector("#region-chip .flag").textContent = curRegionMeta.flag || "🌍";
+    document.getElementById("region-name").textContent = curRegionMeta.label || "미지의 대지";
+  }
+
+  // ==========================================================================
+  // loot 선택 (가중치 랜덤) — 현재 지역 테이블에서
+  // ==========================================================================
+  function rollLoot(regionKey) {
+    const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
+    const reg = rs[regionKey] || rs.default || REGIONS_FALLBACK.regions.default;
+    const loot = reg.loot || REGIONS_FALLBACK.regions.default.loot;
+    let total = 0; for (const l of loot) total += (l.weight||1);
+    let x = Math.random()*total;
+    for (const l of loot) { x -= (l.weight||1); if (x<=0) return Object.assign({ region: regionKey }, l); }
+    return Object.assign({ region: regionKey }, loot[0]);
+  }
+
+  // ==========================================================================
+  // 도감 (localStorage)
+  //   { "<region>|<name>": { obj,name,rarity,region,era,qty,first } }
+  // ==========================================================================
+  function loadCollection() {
+    try { return JSON.parse(localStorage.getItem(LS_COLLECTION) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveCollection(c) {
+    try { localStorage.setItem(LS_COLLECTION, JSON.stringify(c)); } catch (e) {}
+  }
+  function collectionKey(item) { return (item.region||"default") + "|" + (item.name||item.obj); }
+
+  // ★★★ 단일 발견 이벤트 초크포인트 — 나중에 Supabase 브로드캐스트를 여기 한 곳에만 추가 ★★★
+  function onDiscover(item) {
+    const c = loadCollection();
+    const k = collectionKey(item);
+    if (c[k]) { c[k].qty += 1; }
+    else { c[k] = { obj:item.obj, name:item.name, rarity:item.rarity, region:item.region,
+                    era:item.era||null, qty:1, first: Date.now() }; }
+    saveCollection(c);
+    // (미래) 서버 연동 지점:
+    //   await supabase.from('discoveries').insert({ user, ...item, at: Date.now() });
+    //   supabase.channel('global').send({ type:'broadcast', event:'discover', payload:item });
+    return c[k];
+  }
+
+  // ==========================================================================
+  // 발굴게임 완료 수신 (postMessage + localStorage 폴백 드레인)
+  // ==========================================================================
+  function drainPending() {
+    // 발굴게임이 localStorage에 쌓아둔 완료 이벤트를 흡수(postMessage 유실 대비 — L22)
+    try {
+      const raw = localStorage.getItem(LS_PENDING);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      localStorage.removeItem(LS_PENDING);
+      for (const p of arr) handleDigComplete(p, /*fromDrain*/true);
+    } catch (e) {}
+  }
+
+  let _lastCompleteTs = 0;
+  function handleDigComplete(payload, fromDrain) {
+    if (!payload || payload.type !== "dig-complete") return;
+    // 중복 방지 (postMessage + drain 둘 다 들어올 수 있음)
+    if (payload.ts && payload.ts === _lastCompleteTs) return;
+    _lastCompleteTs = payload.ts || Date.now();
+
+    // 어떤 spot이었는지 복원 (활성 spot 우선, 없으면 payload로 재구성)
+    const item = {
+      obj: payload.obj || "dino_skull",
+      name: payload.name || (activeSpot && activeSpot.item.name) || payload.obj || "화석",
+      rarity: payload.rarity || (activeSpot && activeSpot.item.rarity) || "common",
+      region: payload.region || (activeSpot && activeSpot.item.region) || curRegionKey,
+      era: (activeSpot && activeSpot.item.era) || null
+    };
+    const rec = onDiscover(item);        // 도감 기록 (단일 초크포인트)
+
+    // 그 지점 소모 (제거 + 쿨다운 후 재스폰)
+    consumeSpot(activeSpot);
+    activeSpot = null;
+
+    // 발굴 오버레이 닫고 결과 표시
+    closeDig();
+    showResult(item, rec.qty);
+  }
+
+  window.addEventListener("message", (e) => {
+    const d = e.data;
+    if (d && d.type === "dig-complete") handleDigComplete(d, false);
+  });
+
+  // ==========================================================================
+  // 발견 결과 카드
+  // ==========================================================================
+  function showResult(item, qty) {
+    document.getElementById("r-icon").textContent = OBJ_ICON[item.obj] || "🦴";
+    document.getElementById("r-name").textContent = item.name;
+    const rb = document.getElementById("r-rarity");
+    rb.textContent = RARITY_LABEL[item.rarity] || "COMMON";
+    rb.style.background = rarityColor(item.rarity);
+    rb.style.color = "#1a130c";
+    const regLabel = (REGIONS && REGIONS.regions[item.region] && REGIONS.regions[item.region].label) || curRegionMeta.label;
+    document.getElementById("r-meta").textContent =
+      (item.era ? item.era + " · " : "") + regLabel + (qty>1 ? "  ·  보유 "+qty : "");
+    document.getElementById("result").classList.add("show");
+  }
+  document.getElementById("r-ok").addEventListener("click", () => {
+    document.getElementById("result").classList.remove("show");
+  });
+
+  // ==========================================================================
+  // 발굴게임 오버레이
+  // ==========================================================================
+  function openDig(item, spot) {
+    activeSpot = spot;
+    const q = new URLSearchParams({
+      obj: item.obj, rarity: item.rarity, region: item.region,
+      name: encodeURIComponent(item.name), spot: spot ? spot.id : ""
+    });
+    const frame = document.getElementById("dig-frame");
+    frame.src = DIG_URL + "?" + q.toString();
+    document.getElementById("dig-overlay").classList.add("show");
+  }
+  function closeDig() {
+    document.getElementById("dig-overlay").classList.remove("show");
+    document.getElementById("dig-frame").src = "about:blank";
+  }
+  document.getElementById("dig-close").addEventListener("click", () => {
+    // 사용자가 중도 포기 — spot은 유지(재도전 가능)
+    activeSpot = null;
+    closeDig();
+  });
+
+  // ==========================================================================
+  // 스폰 지점
+  // ==========================================================================
+  function spotDivIcon(rarity) {
+    const col = rarityColor(rarity);
+    return L.divIcon({
+      className: "spot-icon",
+      html: '<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);'
+        + 'background:'+col+';border:2px solid rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.5);">'
+        + '<div style="transform:rotate(45deg);text-align:center;line-height:24px;font-size:13px;">⛏️</div></div>',
+      iconSize: [26,26], iconAnchor: [13,26]
+    });
+  }
+  function spawnSpotsAround(lat, lng) {
+    // 기존 제거
+    spots.forEach(s => { if (s.marker) map.removeLayer(s.marker); });
+    spots = [];
+    for (let i=0; i<SPOT_COUNT; i++) spawnOneSpot(lat, lng);
+  }
+  let _spotSeq = 0;
+  function spawnOneSpot(lat, lng) {
+    const ang = rand(0, Math.PI*2);
+    const dist = rand(SPOT_MIN_M, SPOT_MAX_M);
+    const [slat, slng] = offsetMeters(lat, lng, Math.cos(ang)*dist, Math.sin(ang)*dist);
+    const item = rollLoot(curRegionKey);
+    const id = "spot_" + (++_spotSeq);
+    const marker = L.marker([slat, slng], { icon: spotDivIcon(item.rarity) }).addTo(map);
+    marker.bindPopup((curRegionMeta.flag||"") + " 발굴 지점");
+    spots.push({ id, lat:slat, lng:slng, marker, item, cooldownUntil:0 });
+  }
+  function consumeSpot(spot) {
+    if (!spot) return;
+    const idx = spots.indexOf(spot);
+    if (idx>=0) {
+      if (spot.marker) map.removeLayer(spot.marker);
+      spots.splice(idx, 1);
+    }
+    // 쿨다운 후 플레이어 주변에 새 지점 하나 재스폰(POC: 항상 놀 거리 유지)
+    setTimeout(() => {
+      if (player.lat != null) { spawnOneSpot(player.lat, player.lng); updateDiscover(); }
+    }, COOLDOWN_MS);
+  }
+
+  // ==========================================================================
+  // 근접 발견 판정 → 하단 발견 버튼
+  // ==========================================================================
+  let nearestInRange = null;
+  function updateDiscover() {
+    if (player.lat == null) return;
+    let best = null, bestD = Infinity;
+    for (const s of spots) {
+      const d = haversine(player.lat, player.lng, s.lat, s.lng);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    const btn = document.getElementById("discover-btn");
+    const hint = document.getElementById("hint");
+    if (best && bestD <= DISCOVER_RADIUS_M) {
+      nearestInRange = best;
+      document.getElementById("discover-label").textContent =
+        best.item.name + " 발견!";
+      btn.classList.add("show");
+      hint.textContent = "";
+    } else {
+      nearestInRange = null;
+      btn.classList.remove("show");
+      if (best) {
+        hint.textContent = "가장 가까운 발굴 지점까지 " + Math.round(bestD) + "m";
+      } else {
+        hint.textContent = "주변을 탐색해 발굴 지점을 찾으세요";
+      }
+    }
+  }
+  document.getElementById("discover-btn").addEventListener("click", () => {
+    if (!nearestInRange) return;
+    openDig(nearestInRange.item, nearestInRange);
+  });
+
+  // ==========================================================================
+  // 플레이어 위치 갱신 (진짜 GPS + mock 공통 진입)
+  // ==========================================================================
+  let regionResolvedFor = null;   // 마지막으로 지역판정한 대략 좌표
+  function onPositionUpdate(lat, lng, acc) {
+    const first = (player.lat == null);
+    player.lat = lat; player.lng = lng; player.acc = acc || null;
+
+    if (!playerMarker) {
+      playerMarker = L.circleMarker([lat, lng], {
+        radius: 9, color:"#fff", weight:2, fillColor:"#3d8bfd", fillOpacity:1
+      }).addTo(map);
+      playerCircle = L.circle([lat, lng], { radius: DISCOVER_RADIUS_M, color:"#3d8bfd",
+        weight:1, opacity:.4, fillColor:"#3d8bfd", fillOpacity:.08 }).addTo(map);
+    } else {
+      playerMarker.setLatLng([lat, lng]);
+      playerCircle.setLatLng([lat, lng]);
+    }
+
+    if (first) {
+      map.setView([lat, lng], 16);
+      // 첫 위치 → 지역 판정 + 스폰
+      resolveAndSpawn(lat, lng, true);
+      regionResolvedFor = [lat, lng];
+    } else {
+      // 크게 이동하면(>2km) 지역 재판정 (throttle)
+      if (regionResolvedFor && haversine(regionResolvedFor[0], regionResolvedFor[1], lat, lng) > 2000
+          && Date.now() - lastGeocodeAt > 8000) {
+        resolveAndSpawn(lat, lng, false);
+        regionResolvedFor = [lat, lng];
+      }
+    }
+    updateDiscover();
+  }
+
+  async function resolveAndSpawn(lat, lng, doSpawn) {
+    lastGeocodeAt = Date.now();
+    const r = await resolveRegion(lat, lng);
+    setRegion(r.key);
+    if (r.source === "bbox") toast("위치 서비스 대략 판정: " + curRegionMeta.label, 2600);
+    if (doSpawn) spawnSpotsAround(lat, lng);
+  }
+
+  // ==========================================================================
+  // 진짜 GPS
+  // ==========================================================================
+  function startRealGPS() {
+    if (!navigator.geolocation) {
+      toast("이 기기는 위치를 지원하지 않아요. mock 모드로 실행합니다.", 3000);
+      startMock(); return;
+    }
+    navigator.geolocation.watchPosition(
+      (pos) => onPositionUpdate(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+      (err) => {
+        console.warn("[GPS] error", err && err.message);
+        toast("GPS 사용 불가 — mock 모드로 전환합니다.", 3000);
+        startMock();
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 12000 }
+    );
+  }
+
+  // ==========================================================================
+  // MOCK GPS (개발용) — 시작좌표 + 방향버튼/자동드리프트
+  // ==========================================================================
+  const MOCK_START = {   // 기본 시작: 서울(korea 테스트). ?lat=&lng= 로 덮어쓰기 가능.
+    lat: parseFloat(QP.get("lat")) || 37.5665,
+    lng: parseFloat(QP.get("lng")) || 126.9780
+  };
+  const MOCK_STEP_M = 18;    // 방향버튼 1탭 이동 거리
+  let mockAutoDrift = false;
+  let mockDriftAng = rand(0, Math.PI*2);
+
+  function startMock() {
+    if (mockWatchTimer) return;
+    document.getElementById("mock-badge").classList.add("show");
+    document.getElementById("mock-pad").classList.add("show");
+    onPositionUpdate(MOCK_START.lat, MOCK_START.lng, 5);
+    // 자동 드리프트 루프 (토글 off면 정지)
+    mockWatchTimer = setInterval(() => {
+      if (!mockAutoDrift || player.lat == null) return;
+      mockDriftAng += rand(-0.4, 0.4);
+      const [nl, ng] = offsetMeters(player.lat, player.lng, Math.cos(mockDriftAng)*8, Math.sin(mockDriftAng)*8);
+      onPositionUpdate(nl, ng, 5);
+    }, 1000);
+  }
+  function mockMove(dir) {
+    if (player.lat == null) return;
+    let dN=0, dE=0;
+    if (dir==="n") dN=MOCK_STEP_M; else if (dir==="s") dN=-MOCK_STEP_M;
+    else if (dir==="e") dE=MOCK_STEP_M; else if (dir==="w") dE=-MOCK_STEP_M;
+    else if (dir==="c") { mockAutoDrift = !mockAutoDrift; toast(mockAutoDrift?"자동 걷기 ON":"자동 걷기 OFF", 1400); return; }
+    const [nl, ng] = offsetMeters(player.lat, player.lng, dN, dE);
+    onPositionUpdate(nl, ng, 5);
+  }
+  document.querySelectorAll("#mock-pad button").forEach(b => {
+    b.addEventListener("click", () => mockMove(b.dataset.dir));
+  });
+
+  // ==========================================================================
+  // 도감 화면
+  // ==========================================================================
+  // 지역별 전체 loot 목록(도감 미수집 실루엣용) — 모든 지역 loot 평탄화(중복 이름 dedupe)
+  function allKnownItems() {
+    const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
+    const seen = new Map();
+    for (const rk in rs) {
+      if (rk === "default") continue;   // default는 판정 실패용, 도감 카탈로그에서 제외
+      for (const l of (rs[rk].loot||[])) {
+        const key = rk + "|" + l.name;
+        if (!seen.has(key)) seen.set(key, Object.assign({ region: rk }, l));
+      }
+    }
+    return seen;
+  }
+  function renderCollection() {
+    const c = loadCollection();
+    const catalog = allKnownItems();
+    const grid = document.getElementById("col-grid");
+    grid.innerHTML = "";
+    const totalOwned = Object.keys(c).length;
+    const totalCatalog = catalog.size;
+    document.getElementById("col-count").textContent = totalOwned + " / " + totalCatalog;
+
+    // 카탈로그 순회 (수집=밝게, 미수집=실루엣). 추가로 카탈로그 밖(default 등) 수집분도 뒤에 붙임.
+    const cards = [];
+    catalog.forEach((item, key) => {
+      const owned = c[key];
+      cards.push(cardHTML(item, owned));
+    });
+    // 카탈로그에 없는데 수집된 것 (default 지역 등)
+    for (const k in c) {
+      if (!catalog.has(k)) cards.push(cardHTML(c[k], c[k]));
+    }
+    if (cards.length === 0) {
+      grid.innerHTML = '<div class="col-empty">아직 발굴한 화석이 없어요.<br>지도를 돌아다니며 발굴해 보세요!</div>';
+      return;
+    }
+    grid.innerHTML = cards.join("");
+  }
+  function cardHTML(item, owned) {
+    const rs = (REGIONS && REGIONS.regions) || REGIONS_FALLBACK.regions;
+    const regLabel = (rs[item.region] && rs[item.region].label) || "미지";
+    const icon = OBJ_ICON[item.obj] || "🦴";
+    const rc = rarityColor(item.rarity);
+    if (owned) {
+      return '<div class="col-card"><div class="cc-qty">×'+owned.qty+'</div>'
+        + '<div class="cc-icon">'+icon+'</div>'
+        + '<div class="cc-name">'+item.name+'</div>'
+        + '<div class="cc-region">'+regLabel+'</div>'
+        + '<span class="cc-rarity" style="background:'+rc+';color:#1a130c;">'+(RARITY_KR[item.rarity]||"")+'</span>'
+        + '</div>';
+    }
+    return '<div class="col-card locked">'
+      + '<div class="cc-icon">'+icon+'</div>'
+      + '<div class="cc-name">？？？</div>'
+      + '<div class="cc-region">'+regLabel+'</div>'
+      + '<span class="cc-rarity" style="background:#555;color:#ccc;">🔒 미발굴</span>'
+      + '</div>';
+  }
+  document.getElementById("btn-collection").addEventListener("click", () => {
+    renderCollection();
+    document.getElementById("collection").classList.add("show");
+  });
+  document.getElementById("col-back").addEventListener("click", () => {
+    document.getElementById("collection").classList.remove("show");
+  });
+  document.getElementById("btn-locate").addEventListener("click", () => {
+    if (player.lat != null) map.setView([player.lat, player.lng], 16);
+  });
+
+  // ==========================================================================
+  // 부팅
+  // ==========================================================================
+  function initMap() {
+    // 마커 이미지 상대경로 (vendor)
+    L.Icon.Default.prototype.options.imagePath = "../vendor/leaflet/images/";
+    map = L.map("map", { zoomControl:false, attributionControl:true }).setView([37.5665,126.9780], 3);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, crossOrigin: true,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    L.control.zoom({ position:"bottomleft" }).addTo(map);
+  }
+
+  async function loadRegions() {
+    try {
+      const res = await fetch(REGIONS_URL, { cache:"no-cache" });
+      if (res.ok) { REGIONS = await res.json(); return; }
+    } catch (e) { console.warn("[regions] fetch 실패, 인라인 폴백 사용"); }
+    REGIONS = REGIONS_FALLBACK;
+  }
+
+  async function boot() {
+    initMap();
+    await loadRegions();
+    drainPending();   // 이전 세션/단독실행이 남긴 완료 이벤트 흡수(있다면)
+    if (MOCK) startMock(); else startRealGPS();
+    window.__ready = true;
+  }
+
+  // ==========================================================================
+  // QA 훅 (헤드리스 검증) — 로직 위주
+  // ==========================================================================
+  window.__qa = {
+    ready: () => !!window.__ready,
+    isMock: () => MOCK,
+    // mock 좌표 강제 세팅 (지역 판정 + 스폰까지 대기 가능하도록 async 아님, updateDiscover는 즉시)
+    setPos: (lat, lng) => { onPositionUpdate(lat, lng, 5); return player; },
+    // 지역 강제 (테스트: 특정 지역 loot 검증용)
+    forceRegion: (key) => { setRegion(key); if (player.lat!=null) spawnSpotsAround(player.lat, player.lng); return curRegionKey; },
+    region: () => curRegionKey,
+    regions: () => Object.keys((REGIONS&&REGIONS.regions)||{}),
+    // 좌표 → 지역키 (bbox 폴백 경로만; 네트워크 없이 검증)
+    regionByBBox: (lat, lng) => regionFromBBox(lat, lng),
+    resolveRegion: (lat, lng) => resolveRegion(lat, lng),   // async
+    spots: () => spots.map(s => ({ id:s.id, lat:s.lat, lng:s.lng, item:s.item,
+      dist: player.lat!=null ? haversine(player.lat,player.lng,s.lat,s.lng) : null })),
+    // 플레이어를 가장 가까운 spot 위로 순간이동 (in-range 강제)
+    teleportToNearestSpot: () => {
+      let best=null,bd=Infinity;
+      for (const s of spots){ const d = player.lat!=null?haversine(player.lat,player.lng,s.lat,s.lng):0; if(d<bd){bd=d;best=s;} }
+      if (best) { onPositionUpdate(best.lat, best.lng, 5); }
+      return best ? { id:best.id, item:best.item } : null;
+    },
+    nearestInRange: () => nearestInRange ? { id:nearestInRange.id, item:nearestInRange.item } : null,
+    discoverVisible: () => document.getElementById("discover-btn").classList.contains("show"),
+    // 발견 버튼 클릭 (발굴게임 오버레이 오픈)
+    clickDiscover: () => { document.getElementById("discover-btn").click(); return activeSpot ? activeSpot.id : null; },
+    activeSpot: () => activeSpot ? { id:activeSpot.id, item:activeSpot.item } : null,
+    digFrame: () => document.getElementById("dig-frame"),
+    digOverlayOpen: () => document.getElementById("dig-overlay").classList.contains("show"),
+    // 발굴게임 클리어를 셸에 직접 시뮬 (postMessage 경로 테스트)
+    simulateComplete: (payload) => { handleDigComplete(Object.assign({type:"dig-complete"}, payload), false); },
+    collection: () => loadCollection(),
+    collectionSize: () => Object.keys(loadCollection()).length,
+    clearCollection: () => { try{localStorage.removeItem(LS_COLLECTION);localStorage.removeItem(LS_PENDING);}catch(e){} },
+    resultVisible: () => document.getElementById("result").classList.contains("show"),
+    rollLoot: (region) => rollLoot(region),
+    mockMove: (dir) => mockMove(dir)
+  };
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "note": "지역별 발굴 loot 테이블. 국가 단위. rarity: common < uncommon < rare < epic < legendary. weight=가중치. obj=발굴게임 릴리프 타입(현 POC 엔진은 dino_skull 릴리프 1종만 실제 렌더; obj/name/rarity/region은 도감 기록·라벨용).",
+    "rarityColors": {
+      "common": "#8a8f98",
+      "uncommon": "#4caf7d",
+      "rare": "#3d8bfd",
+      "epic": "#a259e6",
+      "legendary": "#f0a030"
+    },
+    "reverseGeocode": {
+      "provider": "nominatim",
+      "url": "https://nominatim.openstreetmap.org/reverse?format=json&zoom=3&addressdetails=1",
+      "userAgent": "fossil-dig-poc/0.1 (nanoclo)"
+    }
+  },
+  "regions": {
+    "korea": {
+      "label": "대한민국",
+      "flag": "🇰🇷",
+      "bbox": [33.0, 124.5, 39.5, 131.0],
+      "loot": [
+        { "obj": "dino_skull", "name": "코리아케라톱스 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "dino_skull", "name": "부경고사우루스 척추뼈", "rarity": "rare", "weight": 10, "era": "백악기" },
+        { "obj": "footprint", "name": "해남 공룡 발자국 화석", "rarity": "uncommon", "weight": 16, "era": "백악기" },
+        { "obj": "egg", "name": "공룡알 둥지 화석", "rarity": "rare", "weight": 8, "era": "백악기" },
+        { "obj": "relic", "name": "신라 금관 조각", "rarity": "legendary", "weight": 3, "era": "삼국시대" },
+        { "obj": "relic", "name": "백제 금동대향로 파편", "rarity": "epic", "weight": 5, "era": "삼국시대" },
+        { "obj": "relic", "name": "고려청자 파편", "rarity": "uncommon", "weight": 18, "era": "고려" },
+        { "obj": "relic", "name": "빗살무늬 토기 조각", "rarity": "common", "weight": 28, "era": "신석기" }
+      ]
+    },
+    "mongolia": {
+      "label": "몽골",
+      "flag": "🇲🇳",
+      "bbox": [41.5, 87.5, 52.2, 119.9],
+      "loot": [
+        { "obj": "dino_skull", "name": "벨로키랍토르 두개골", "rarity": "epic", "weight": 8, "era": "백악기" },
+        { "obj": "dino_skull", "name": "프로토케라톱스 두개골", "rarity": "rare", "weight": 14, "era": "백악기" },
+        { "obj": "dino_skull", "name": "오비랍토르 두개골", "rarity": "rare", "weight": 10, "era": "백악기" },
+        { "obj": "egg", "name": "오비랍토르 알둥지", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "dino_skull", "name": "타르보사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "claw", "name": "테리지노사우루스 발톱", "rarity": "epic", "weight": 5, "era": "백악기" },
+        { "obj": "fight", "name": "'싸우는 공룡' 화석", "rarity": "legendary", "weight": 2, "era": "백악기" },
+        { "obj": "bone", "name": "공룡 대퇴골 화석", "rarity": "common", "weight": 26, "era": "백악기" }
+      ]
+    },
+    "north_america": {
+      "label": "북아메리카",
+      "flag": "🇺🇸",
+      "bbox": [24.0, -168.0, 71.5, -52.0],
+      "loot": [
+        { "obj": "dino_skull", "name": "티라노사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "dino_skull", "name": "트리케라톱스 두개골", "rarity": "epic", "weight": 7, "era": "백악기" },
+        { "obj": "plate", "name": "스테고사우루스 골판", "rarity": "rare", "weight": 11, "era": "쥐라기" },
+        { "obj": "bone", "name": "브라키오사우루스 목뼈", "rarity": "rare", "weight": 9, "era": "쥐라기" },
+        { "obj": "claw", "name": "벨로키랍토르 발톱", "rarity": "uncommon", "weight": 16, "era": "백악기" },
+        { "obj": "dino_skull", "name": "알로사우루스 두개골", "rarity": "epic", "weight": 6, "era": "쥐라기" },
+        { "obj": "tooth", "name": "티렉스 이빨 화석", "rarity": "uncommon", "weight": 20, "era": "백악기" },
+        { "obj": "bone", "name": "공룡 갈비뼈 화석", "rarity": "common", "weight": 28, "era": "중생대" }
+      ]
+    },
+    "egypt": {
+      "label": "이집트",
+      "flag": "🇪🇬",
+      "bbox": [22.0, 24.5, 31.9, 37.0],
+      "loot": [
+        { "obj": "relic", "name": "투탕카멘 황금 마스크", "rarity": "legendary", "weight": 2, "era": "신왕국" },
+        { "obj": "relic", "name": "파라오 석관(사르코파구스)", "rarity": "epic", "weight": 6, "era": "신왕국" },
+        { "obj": "relic", "name": "카노푸스 단지", "rarity": "rare", "weight": 12, "era": "고왕국" },
+        { "obj": "relic", "name": "우샤브티 부장품 인형", "rarity": "uncommon", "weight": 18, "era": "중왕국" },
+        { "obj": "relic", "name": "스카라베 부적", "rarity": "common", "weight": 26, "era": "고대이집트" },
+        { "obj": "relic", "name": "로제타석 파편", "rarity": "epic", "weight": 5, "era": "프톨레마이오스" },
+        { "obj": "dino_skull", "name": "스피노사우루스 두개골", "rarity": "legendary", "weight": 3, "era": "백악기" },
+        { "obj": "relic", "name": "상형문자 석판", "rarity": "uncommon", "weight": 16, "era": "고대이집트" }
+      ]
+    },
+    "europe": {
+      "label": "유럽",
+      "flag": "🇪🇺",
+      "bbox": [35.0, -11.0, 71.5, 40.0],
+      "loot": [
+        { "obj": "bird", "name": "시조새(아르케옵테릭스) 화석", "rarity": "legendary", "weight": 3, "era": "쥐라기" },
+        { "obj": "dino_skull", "name": "이구아노돈 두개골", "rarity": "epic", "weight": 6, "era": "백악기" },
+        { "obj": "ammonite", "name": "암모나이트 화석", "rarity": "common", "weight": 28, "era": "중생대" },
+        { "obj": "relic", "name": "로마 은화 무더기", "rarity": "uncommon", "weight": 18, "era": "로마제국" },
+        { "obj": "relic", "name": "바이킹 은 브로치", "rarity": "rare", "weight": 11, "era": "바이킹" },
+        { "obj": "relic", "name": "켈트 황금 토크", "rarity": "epic", "weight": 5, "era": "철기시대" },
+        { "obj": "bone", "name": "매머드 엄니 화석", "rarity": "rare", "weight": 9, "era": "빙하기" },
+        { "obj": "trilobite", "name": "삼엽충 화석", "rarity": "common", "weight": 24, "era": "고생대" }
+      ]
+    },
+    "default": {
+      "label": "미지의 대지",
+      "flag": "🌍",
+      "bbox": null,
+      "loot": [
+        { "obj": "ammonite", "name": "암모나이트 화석", "rarity": "common", "weight": 30, "era": "중생대" },
+        { "obj": "bone", "name": "정체불명의 척추뼈", "rarity": "uncommon", "weight": 20, "era": "?" },
+        { "obj": "dino_skull", "name": "이름 없는 공룡 두개골", "rarity": "rare", "weight": 12, "era": "중생대" },
+        { "obj": "relic", "name": "고대 토기 파편", "rarity": "common", "weight": 26, "era": "?" },
+        { "obj": "trilobite", "name": "삼엽충 화석", "rarity": "common", "weight": 22, "era": "고생대" },
+        { "obj": "relic", "name": "수수께끼의 유물", "rarity": "epic", "weight": 4, "era": "?" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>Fossil Dig — POC</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%F0%9F%A6%B4%3C/text%3E%3C/svg%3E">
+<style>
+  :root { --soil:#6b4a2f; --bone:#d8c9a3; --brk:#7a3b2b; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#2a211a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #app { position:fixed; inset:0; }
+  canvas { display:block; position:absolute; inset:0; width:100%!important; height:100%!important; }
+
+  /* ===== HUD ===== */
+  #hud-top {
+    position:fixed; left:0; right:0; top:0; z-index:10;
+    padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;
+    pointer-events:none;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .bar-wrap { background:rgba(20,14,8,0.55); border-radius:12px; padding:8px 12px; backdrop-filter:blur(4px); }
+  .bar-label { display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:#f3e6cf; letter-spacing:.3px; margin-bottom:5px; }
+  .bar-label .val { font-variant-numeric:tabular-nums; }
+  .bar-track { height:9px; border-radius:6px; background:rgba(0,0,0,0.35); overflow:hidden; }
+  .bar-fill { height:100%; width:0%; border-radius:6px; transition:width .12s linear; }
+  #reveal-fill { background:linear-gradient(90deg,#c9b584,#f0dfae); }
+  #broken-fill { background:linear-gradient(90deg,#8a4130,#d8543a); }
+
+  /* ===== Tool bar ===== */
+  #toolbar {
+    position:fixed; left:0; right:0; bottom:0; z-index:10;
+    padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 14px);
+    display:flex; gap:10px; justify-content:center;
+    pointer-events:auto;
+  }
+  .tool-btn {
+    flex:1; max-width:120px; min-width:78px;
+    background:rgba(30,22,14,0.72); border:2px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:9px 6px 8px; color:#e8d9bc; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    transition:transform .08s, border-color .12s, background .12s;
+  }
+  .tool-btn:active { transform:scale(0.94); }
+  .tool-btn.active { border-color:#f0c674; background:rgba(90,64,30,0.92); box-shadow:0 0 14px rgba(240,198,116,0.35); }
+  .tool-ico { font-size:26px; line-height:1; }
+  .tool-name { font-size:12px; font-weight:700; letter-spacing:.2px; }
+
+  /* ===== Overlays ===== */
+  #overlay {
+    position:fixed; inset:0; z-index:30; display:none;
+    align-items:center; justify-content:center; flex-direction:column;
+    background:rgba(10,7,4,0.72); backdrop-filter:blur(3px); text-align:center; padding:24px;
+  }
+  #overlay.show { display:flex; animation:fade .4s ease; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+  #ov-title { font-size:44px; font-weight:800; margin-bottom:8px; letter-spacing:1px; text-shadow:0 3px 14px rgba(0,0,0,.6); }
+  #ov-sub { font-size:16px; color:#e8d9bc; margin-bottom:26px; }
+  #ov-retry {
+    pointer-events:auto; background:#f0c674; color:#3a2810; border:none; border-radius:14px;
+    padding:14px 34px; font-size:17px; font-weight:800; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.4);
+  }
+  #ov-retry:active { transform:scale(0.95); }
+  .win #ov-title { color:#ffe6a0; } .lose #ov-title { color:#ff8a6a; }
+
+  /* subtle title */
+  #brand { position:fixed; top:calc(env(safe-area-inset-top,0px) + 4px); right:14px; z-index:9;
+           font-size:11px; color:rgba(243,230,207,.35); font-weight:600; letter-spacing:1px; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="hud-top">
+  <div class="bar-wrap">
+    <div class="bar-label"><span>발굴률</span><span class="val" id="reveal-val">0%</span></div>
+    <div class="bar-track"><div class="bar-fill" id="reveal-fill"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>손상</span><span class="val" id="broken-val">0%</span></div>
+    <div class="bar-track"><div class="bar-fill" id="broken-fill"></div></div>
+  </div>
+</div>
+<div id="brand">FOSSIL DIG</div>
+
+<div id="toolbar"></div>
+
+<div id="overlay">
+  <div id="ov-title">CLEAR!</div>
+  <div id="ov-sub">Tap to Retry</div>
+  <button id="ov-retry">다시하기</button>
+</div>
+
+<!-- voxel-slingshot 방식: 상대경로 벤더 로드 -->
+<script src="../vendor/three.r128.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ============================================================
+  // 메타 셸(지도 앱) 연동 — ?obj=&rarity=&region=&name= 수용 (비파괴)
+  //   파라미터가 없으면(단독 실행) 기존 동작과 100% 동일. 라벨/도감 기록용.
+  //   clear 시 부모(지도 셸)로 postMessage + 동일오리진 localStorage 이중기록(L22).
+  // ============================================================
+  const QP = new URLSearchParams(location.search);
+  const ENCOUNTER = {
+    obj: QP.get("obj") || null,
+    rarity: QP.get("rarity") || null,
+    region: QP.get("region") || null,
+    name: QP.get("name") ? decodeURIComponent(QP.get("name")) : null,
+    spot: QP.get("spot") || null,        // 소모 처리용 스폰 지점 id
+    active: QP.has("obj") || QP.has("meta")
+  };
+  let _completeSent = false;
+  function notifyComplete() {
+    if (_completeSent) return;
+    _completeSent = true;
+    const payload = {
+      type: "dig-complete",
+      obj: ENCOUNTER.obj || "dino_skull",
+      rarity: ENCOUNTER.rarity || "common",
+      region: ENCOUNTER.region || "default",
+      name: ENCOUNTER.name || null,
+      spot: ENCOUNTER.spot || null,
+      ts: Date.now()
+    };
+    // ① 부모로 postMessage (iframe 오버레이 / 별창 모두)
+    try { if (window.parent && window.parent !== window) window.parent.postMessage(payload, "*"); } catch (e) {}
+    try { if (window.opener) window.opener.postMessage(payload, "*"); } catch (e) {}
+    // ② 동일오리진 localStorage 이중기록 폴백 (타이밍/단독 유실 방지 — L22)
+    try {
+      const raw = localStorage.getItem("fossildig_pending");
+      const arr = raw ? JSON.parse(raw) : [];
+      arr.push(payload);
+      localStorage.setItem("fossildig_pending", JSON.stringify(arr));
+    } catch (e) {}
+  }
+
+  // ============================================================
+  // STAGE DATA (POC 인라인 — 나중에 stages/*.json fetch로 교체)
+  // ============================================================
+  const STAGE = {
+    level: 1,
+    grid: { cols: 72, rows: 96 },
+    object: { type: "dino_skull", placement: { x: 0.5, y: 0.5, scale: 0.8 }, tilt: 0.26 },
+    soil: { startDepth: 1.35 },
+    tools: ["shovel", "chisel", "brush"],
+    fail: { maxBrokenFrac: 0.08 },
+    clear: { revealFrac: 1.0 }
+  };
+
+  // 도구 기본값 (데이터 우선; 지시 시작점)
+  //  도구별 깊이 역할 (soilAbove = 오브젝트 위 남은 흙):
+  //   삽    : 강함(dp0.20,r6) — 두꺼운 겉흙 대량. objTop 근처선 큰 depth라 과굴착 파손 → bulk 전용.
+  //   끌    : 중간(dp0.075,r3) — 삽보다 느리지만 더 가까이 안전. 중간층 담당.
+  //   붓    : safe. 두꺼운 흙엔 거의 안 먹힘(brushEff=soilAbove로 감쇠). objTop clamp 무손상, 마무리 전용.
+  const TOOL_DEFS = {
+    shovel: { name: "삽",  ico: "🪏", radius: 6, depthPerStroke: 0.20,  safe: false, haptic: 24, sfx: "shovel" },
+    chisel: { name: "끌",  ico: "🔨", radius: 3, depthPerStroke: 0.075, safe: false, haptic: 16, sfx: "chisel" },
+    brush:  { name: "붓",  ico: "🖌️", radius: 5, depthPerStroke: 0.05,  safe: true,  haptic: 8,  sfx: "brush" }
+  };
+
+  // 붓 유효성: soilAbove(오브젝트 위 남은 흙)가 얇을 때만 제대로 걷힘.
+  //   soilAbove >= BRUSH_MAX → 제거량 0 (두꺼운 흙에 붓 무용, 처음부터 붓질 불가가 목표)
+  //   soilAbove <= BRUSH_FULL → 풀파워(얇은 마무리층)
+  const BRUSH_MAX  = 0.34;
+  const BRUSH_FULL = 0.12;
+
+  // 튜닝 상수
+  //  reveal 판정: objTop-BROKEN_TOL <= soilTop <= objTop+TOL 이면 "노출됨"
+  //  안전대(safe band) = TOL + BROKEN_TOL. 끌(0.075 depth)이 이 대역 안에
+  //  안착할 수 있을 만큼 넓게 잡아 "가까이서 조심히" 발굴이 가능하게 함.
+  const TOL = 0.055;         // reveal 허용오차 (objTop 위쪽 여유) — 끌 dp에 맞춰 살짝 넓힘
+  const BROKEN_TOL = 0.05;   // soilTop이 objTop보다 이만큼 아래로 가면 broken
+  const OBJ_MIN = 0.05;      // objTop이 이 값보다 크면 "오브젝트 열"로 간주
+
+  // ============================================================
+  // WORLD / GRID
+  // ============================================================
+  const COLS = STAGE.grid.cols, ROWS = STAGE.grid.rows;
+  const N = COLS * ROWS;
+  const WORLD_W = 20;                          // 월드 가로
+  const WORLD_H = WORLD_W * (ROWS / COLS);     // 세로 (비율 유지)
+  const START_DEPTH = STAGE.soil.startDepth;   // 초기 흙 높이 (정규화 1.0)
+  const HEIGHT_SCALE = 4.0;                     // 정규화 높이 -> 월드 Y 배율
+
+  // 열 인덱스: i = r*COLS + c
+  let soilTop = new Float32Array(N);   // 현재 흙 표면 (정규화)
+  let objTop  = new Float32Array(N);   // 묻힌 오브젝트 표면 (정규화, 고정)
+  let isObj   = new Uint8Array(N);     // 오브젝트 열 여부
+  let totalObjCols = 0;
+
+  // ============================================================
+  // objTop 절차적 릴리프 — 공룡 두개골 실루엣 (POC)
+  //   나중에 depthMap PNG 로드로 교체 (buildObjTop 교체만)
+  // ============================================================
+  function gauss(dx, dy, sx, sy) {
+    return Math.exp(-(dx * dx) / (2 * sx * sx) - (dy * dy) / (2 * sy * sy));
+  }
+  // smoothstep(0,1) clamp
+  function smooth01(x) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    return x * x * (3 - 2 * x);
+  }
+
+  function buildObjTop() {
+    objTop.fill(0);
+    const place = STAGE.object.placement;
+    const scale = place.scale;             // 0.8 => 중앙 ~60-80% 영역
+    const cx = place.x, cy = place.y;      // 정규화 중심
+
+    // 정규화 좌표계에서 두개골을 그림 (u,v in [-1,1] 상대)
+    // 세로형: 두개골이 위(주둥이 아래쪽) 향하도록 배치
+    let raw = new Float32Array(N);
+    let maxV = 0;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const i = r * COLS + c;
+        // 정규화 셀 중심 (0..1)
+        const nu = (c + 0.5) / COLS;
+        const nv = (r + 0.5) / ROWS;
+        // 오브젝트 로컬 좌표 (중심 기준, scale 반영) → [-1..1] 범위 근처
+        const u = (nu - cx) / (0.5 * scale);   // 가로
+        const v = (nv - cy) / (0.5 * scale);   // 세로 (v<0=위쪽=주둥이, v>0=아래=뒤통수)
+
+        // 공룡(수각류) 두개골 — 위에서 본 모습.
+        // 좌표: v<0=앞(주둥이 끝), v>0=뒤(뒤통수). au=|u| 좌우대칭.
+        //   뒤통수(cranium)는 넓고 둥근 사각, 앞은 좁아지는 긴 주둥이(snout).
+        const au = Math.abs(u);
+
+        // --- 세로위치별 반폭 hw(v): 두개골 윤곽 ---
+        // 뒤통수(v>0.2): 넓은 사각~둥근. 목쪽(v>0.85)에서 다시 살짝 좁아짐.
+        // 주둥이(v<0.2): 앞으로 갈수록 좁아져 코끝(v~-1.0)에서 뾰족.
+        let hw;
+        if (v >= 0.2) {
+          const t = (v - 0.2) / 0.75;          // 0(뒤통수 앞) .. 1(목)
+          hw = 0.70 - 0.16 * Math.max(0, t - 0.55) / 0.45;   // 뒤통수 넓다가 목에서 약간 좁아짐
+        } else {
+          const t = (0.2 - v) / 1.15;          // 0(눈부위) .. 1(코끝)
+          hw = 0.62 - 0.44 * t;                // 주둥이 선형 수렴 → 코끝 ~0.18
+        }
+        hw = Math.max(0.05, hw);
+
+        // --- 실루엣 마스크(부드러운 가장자리) ---
+        const edge = 0.13;
+        const bodyMask = smooth01((hw - au) / edge);
+        const vMask = smooth01((v + 1.02) / 0.12) * smooth01((0.98 - v) / 0.14);
+        const mask = bodyMask * vMask;
+        if (mask <= 0.001) { raw[i] = 0; continue; }
+
+        // --- 기본 볼륨: 가장자리→중앙 둥근 단면(원통형 뼈 두께) + 뒤통수 돔 ---
+        // 단면: 중앙 두껍고 가장자리 얇음 (반원 프로파일)
+        const cross = Math.sqrt(Math.max(0, 1 - Math.pow(au / hw, 2)));  // 0..1
+        let h = 0.46 + 0.34 * cross;               // 기본 두께 (평평한 바닥은 안 됨)
+        h += 0.42 * gauss(u, v - 0.55, 0.52, 0.30); // 뒤통수 돔(완만)
+
+        // --- 눈두덩(brow) 융기: 안와 바깥 테두리 좌우 두툼 (눈구멍을 감싸는 능선) ---
+        h += 0.50 * gauss(au - 0.42, v - 0.06, 0.11, 0.13);
+        // --- 안와 사이 콧등 능선(양눈 사이 도드라진 뼈) ---
+        h += 0.30 * gauss(u, v - 0.04, 0.07, 0.16);
+        // --- 콧대(주둥이 위 능선): 주둥이 중앙 도드라짐 ---
+        h += 0.24 * gauss(u, v + 0.55, 0.09, 0.28);
+
+        // 여기까지 = 솟은 형태. 이제 구멍(음각)을 판다.
+        h *= mask;   // 윤곽 밖 제거
+
+        // === 안와(눈구멍) — 크고 깊은 구멍 2개 (가장 또렷: 강하게 판다) ===
+        h -= 1.30 * gauss(au - 0.30, v - 0.05, 0.115, 0.14);
+        // === 측두창(뒤통수 큰 구멍) 좌우 ===
+        h -= 0.70 * gauss(au - 0.36, v - 0.60, 0.13, 0.15);
+        // === 전안와창(눈앞 삼각 구멍) 좌우 ===
+        h -= 0.55 * gauss(au - 0.20, v + 0.30, 0.085, 0.15);
+        // === 콧구멍(주둥이 앞 중앙 함몰) ===
+        h -= 0.45 * gauss(u, v + 0.72, 0.065, 0.12);
+
+        if (h < 0) h = 0;
+        raw[i] = h;
+        if (h > maxV) maxV = h;
+      }
+    }
+
+    // 정규화 + 기울기(tilt): 오브젝트가 "비스듬히 서서 묻힌" 느낌.
+    //   TOP_FRAC를 낮춰 오브젝트 위 겉흙을 두껍게 (평평 기준 최소 overburden ~0.34→~0.65).
+    //   TILT: 세로축(v, 즉 앞주둥이↔뒤통수)을 따라 선형 경사를 더해 한쪽 끝은 얕게(붓 존)
+    //   반대쪽 끝은 깊게(삽 존) 만든다. 가장 깊은 끝도 흙에 확실히 덮이도록 최고점을 캡.
+    const TOP_FRAC = 0.42;                       // 평평했다면 오브젝트 최고점이 여기까지
+    const TILT = (STAGE.object.tilt != null ? STAGE.object.tilt : 0.0);  // 축방향 경사 세기(정규화)
+    const cyPlace = STAGE.object.placement.y;
+    const scalePlace = STAGE.object.placement.scale;
+    const thr = 0.20;   // 이 이하는 오브젝트 없음(바닥) — 윤곽 또렷
+    totalObjCols = 0;
+    for (let i = 0; i < N; i++) {
+      let vv = raw[i] / (maxV || 1);
+      if (vv < thr) { objTop[i] = 0; isObj[i] = 0; }
+      else {
+        // thr..1 -> 0..1 재매핑 후 TOP_FRAC 스케일
+        const t = (vv - thr) / (1 - thr);
+        let top = t * TOP_FRAC * START_DEPTH;
+        // 기울기: 오브젝트 로컬 세로좌표 vloc in [-1..1] (주둥이 -1 ↔ 뒤통수 +1).
+        //   앞끝(주둥이, vloc<0)은 더 얕게(붓 존), 뒤끝(뒤통수, vloc>0)은 더 깊게(삽 존).
+        const r = (i / COLS) | 0;
+        const nv = (r + 0.5) / ROWS;
+        const vloc = (nv - cyPlace) / (0.5 * scalePlace);   // -1..1
+        top += TILT * START_DEPTH * 0.5 * (-vloc);          // vloc<0(앞)→+ (얕음), vloc>0(뒤)→- (깊음)
+        // 가장 얕은 지점도 흙에 조금은 덮이도록, 가장 깊은 지점도 파묻히도록 캡.
+        if (top < 0.04 * START_DEPTH) top = 0.04 * START_DEPTH;
+        const CAP = 0.62 * START_DEPTH;   // 최고점 = 흙(1.0)에 확실히 덮임(min overburden ~0.38*SD=0.51, 0%에서 뼈 안 비침)
+        if (top > CAP) top = CAP;
+        objTop[i] = top;
+        isObj[i] = objTop[i] > OBJ_MIN ? 1 : 0;
+        if (isObj[i]) totalObjCols++;
+      }
+    }
+  }
+
+  // ============================================================
+  // THREE 씬
+  // ============================================================
+  let renderer, scene, camera, terrain, geo, posAttr;
+  let raycaster, ndc;
+  let terrainMat, soilTex, boneTex, revealAttr;
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const TEX_REPEAT = 7.0;   // 월드 UV 반복 횟수 (지형 폭 대비)
+
+  // 실측 텍스처를 씀 → 정점컬러 대신 톤 대비는 셰이더가 담당.
+  // (흙=진갈색 어둡게 / 뼈=크림 밝게 극대비)
+
+  function makeTerrainTexture(url, sRGB) {
+    const t = new THREE.TextureLoader().load(url);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 1);           // 반복은 셰이더에서 UV*repeat로 처리
+    t.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4;
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    if (sRGB && THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
+    t.needsUpdate = true;
+    return t;
+  }
+
+  function initThree() {
+    const app = document.getElementById("app");
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+    renderer.setPixelRatio(DPR);
+    renderer.setClearColor(0x1a130c, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // 톤매핑 완화 + 노출 낮춤: 밝은 뼈는 살리되 흙은 확실히 어둡게 (파리한 톤 제거)
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    app.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x140e08, 60, 130);
+
+    camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
+
+    // 텍스처 로드 (상대경로 — 단일 HTML/앱 양쪽 호환)
+    soilTex = makeTerrainTexture("../assets/textures/soil.webp", true);
+    boneTex = makeTerrainTexture("../assets/objects/bone.webp", true);
+
+    // --- 지형: PlaneGeometry를 XZ로 눕힘 ---
+    geo = new THREE.PlaneGeometry(WORLD_W, WORLD_H, COLS - 1, ROWS - 1);
+    geo.rotateX(-Math.PI / 2);   // XZ 평면
+    posAttr = geo.attributes.position;
+
+    // 발굴상태를 per-vertex color 어트리뷰트로 전달 (r=reveal, g=broken).
+    //  (color는 가장 널리 지원되는 정점 채널 — 원본 코드에서 정상 동작 확인.)
+    const nVerts = posAttr.count;
+    revealAttr = new THREE.BufferAttribute(new Float32Array(nVerts * 3), 3);
+    geo.setAttribute("color", revealAttr);
+
+    terrainMat = makeTerrainMaterial();
+    terrain = new THREE.Mesh(geo, terrainMat);
+    terrain.receiveShadow = true;
+    terrain.castShadow = false;
+    scene.add(terrain);
+
+    // 조명 (벽/파티클용 표준 라이트 — 지형은 셰이더가 자체 라이팅)
+    const hemi = new THREE.HemisphereLight(0xfff0da, 0x2a1c10, 0.55);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xfff2d6, 1.35);
+    dir.position.copy(LIGHT_POS);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(1024, 1024);
+    dir.shadow.camera.near = 1; dir.shadow.camera.far = 90;
+    dir.shadow.camera.left = -WORLD_W; dir.shadow.camera.right = WORLD_W;
+    dir.shadow.camera.top = WORLD_H; dir.shadow.camera.bottom = -WORLD_H;
+    dir.shadow.bias = -0.0015;
+    scene.add(dir);
+
+    // 피트 벽 (발굴장 느낌) — 얇은 박스 테두리
+    addPitFrame();
+
+    // 바닥 그림자 캐처(옵션) 생략 — 지형이 곧 표면
+
+    raycaster = new THREE.Raycaster();
+    ndc = new THREE.Vector2();
+
+    initParticles();
+    onResize();
+    window.addEventListener("resize", onResize);
+  }
+
+  // 공용 광원 방향 (지형 셰이더 + 씬 라이트가 같은 방향)
+  const LIGHT_POS = new THREE.Vector3(-13, 26, 10);
+  const _lightDir = LIGHT_POS.clone().normalize();
+
+  // ============================================================
+  // 지형 커스텀 셰이더: soil↔bone 텍스처 월드UV 타일링 + reveal mix
+  //   흙=진갈색 어둡게, 뼈=크림 밝게 극대비. 노멀은 정점노멀로 라이팅.
+  // ============================================================
+  function makeTerrainMaterial() {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uSoil: { value: soilTex },
+        uBone: { value: boneTex },
+        uRepeat: { value: TEX_REPEAT },
+        uAspect: { value: WORLD_H / WORLD_W },
+        uLightDir: { value: _lightDir },
+        uHeightScale: { value: HEIGHT_SCALE },
+        uStartDepth: { value: START_DEPTH },
+        fogColor: { value: new THREE.Color(0x140e08) },
+        fogNear: { value: 60.0 },
+        fogFar: { value: 130.0 }
+      },
+      vertexColors: true,
+      fog: false,
+      lights: false,
+      vertexShader: `
+        varying float vReveal;
+        varying float vBroken;
+        varying float vHeight;
+        varying vec2 vWorldUV;
+        varying vec3 vNormal;
+        varying float vFogDepth;
+        uniform float uRepeat;
+        uniform float uAspect;
+        uniform float uHeightScale;
+        void main() {
+          // color.r=reveal, color.g=broken (three가 'color' 어트리뷰트를 자동 주입)
+          vReveal = color.r;
+          vBroken = color.g;
+          vNormal = normalize(normalMatrix * normal);
+          vWorldUV = vec2(position.x, position.z);
+          vHeight = position.y / uHeightScale;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vFogDepth = -mv.z;
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        uniform sampler2D uSoil;
+        uniform sampler2D uBone;
+        uniform float uRepeat;
+        uniform float uAspect;
+        uniform vec3 uLightDir;
+        uniform float uStartDepth;
+        uniform vec3 fogColor;
+        uniform float fogNear;
+        uniform float fogFar;
+        varying float vReveal;
+        varying float vBroken;
+        varying float vHeight;
+        varying vec2 vWorldUV;
+        varying vec3 vNormal;
+        varying float vFogDepth;
+
+        void main() {
+          // 월드폭 20 기준 → 0..1로 정규화 후 repeat 타일링 (세로는 aspect 보정해 정사각 타일)
+          vec2 uv = vec2(vWorldUV.x / 20.0 + 0.5, vWorldUV.y / (20.0 * uAspect) + 0.5);
+          vec2 tuv = uv * vec2(uRepeat, uRepeat * uAspect);
+
+          vec3 soil = texture2D(uSoil, tuv).rgb;
+          vec3 bone = texture2D(uBone, tuv * 0.72).rgb;
+
+          // --- 톤 대비: 흙은 확실히 어둡게(진갈색), 뼈는 크림(밝지만 텍스처 유지) ---
+          // 흙: 감마로 어둠 강조 → 진갈색
+          soil = pow(soil, vec3(1.45)) * 0.82;
+          // 뼈: 텍스처를 크림/아이보리로 눌러 화이트아웃 방지 (디테일 보존이 핵심)
+          //   원본이 매우 밝은 크림(~0.9)이라 강하게 감마+게인다운해야 미드톤 뼈가 됨.
+          bone = pow(bone, vec3(1.55)) * 0.86;
+          // 뼈에 살짝 따뜻한 아이보리 톤 (푸른기 제거)
+          bone *= vec3(1.02, 0.98, 0.90);
+
+          float rev = clamp(vReveal, 0.0, 1.0);
+          // 흙→뼈 전이는 살짝 샤프하게 (걷히는 경계가 또렷)
+          float mixT = smoothstep(0.15, 0.82, rev);
+          vec3 albedo = mix(soil, bone, mixT);
+
+          // 파낸 흙 벽(깊이) 그늘: reveal 낮고 파인 곳일수록 어둡게 (깊이 판 느낌)
+          float pitShade = mix(1.0, 0.55, (1.0 - rev) * clamp((uStartDepth - vHeight) / uStartDepth, 0.0, 1.0));
+          albedo *= pitShade;
+
+          // broken: 어두운 금간 톤 오버레이
+          float brk = clamp(vBroken, 0.0, 1.0);
+          vec3 brokenCol = albedo * 0.30 + vec3(0.09, 0.03, 0.02);
+          albedo = mix(albedo, brokenCol, brk);
+
+          // --- 라이팅: 정점 노멀 diffuse + 앰비언트 + 경사 음영(릴리프 강조) ---
+          vec3 n = normalize(vNormal);
+          float ndl = max(dot(n, normalize(uLightDir)), 0.0);
+          // 경사도(1=평평, 0=수직벽): 안와/능선 경계면을 어둡게 해 3D 형태를 살림
+          float flatness = clamp(n.y, 0.0, 1.0);
+          float slopeShade = 0.55 + 0.45 * flatness;   // 수직면(구멍벽)일수록 어둡게
+          // 직광 대비를 키워 뼈의 융기/함몰이 또렷 (평면부는 여전히 화이트아웃 방지)
+          float diff = 0.40 + 0.60 * ndl;
+          vec3 col = albedo * diff * slopeShade;
+
+          // rim: 능선 가장자리 살짝 밝게 (뼈 하이라이트)
+          col += bone * mixT * pow(ndl, 6.0) * 0.12;
+
+          // 톤 롤오프 없이 clamp (NoToneMapping)
+          col = clamp(col, 0.0, 1.0);
+
+          // sRGB 출력
+          col = pow(col, vec3(1.0 / 2.2));
+
+          // fog
+          float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+          col = mix(col, fogColor, fogFactor);
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+  }
+
+  function addPitFrame() {
+    const wallH = HEIGHT_SCALE * START_DEPTH * 1.02;
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1b, roughness: 1.0, metalness: 0 });
+    const t = 0.5;
+    const half = wallH / 2;
+    const grp = new THREE.Group();
+    function wall(w, d, x, z) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), wallMat);
+      m.position.set(x, half - wallH * 0.5 - 0.0, z);
+      m.receiveShadow = true;
+      grp.add(m);
+    }
+    const hw = WORLD_W / 2, hh = WORLD_H / 2;
+    wall(WORLD_W + t * 2, t, 0, -hh - t / 2);
+    wall(WORLD_W + t * 2, t, 0, hh + t / 2);
+    wall(t, WORLD_H, -hw - t / 2, 0);
+    wall(t, WORLD_H, hw + t / 2, 0);
+    // 바닥판(어두운) — 완전히 파냈을 때 뒤 비침 방지
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(WORLD_W + 2, WORLD_H + 2),
+      new THREE.MeshStandardMaterial({ color: 0x241a10, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.05;
+    floor.receiveShadow = true;
+    grp.add(floor);
+    scene.add(grp);
+  }
+
+  function onResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, true);   // updateStyle=true: 캔버스 CSS크기=뷰포트 (안 그러면 DPR배 CSS로 커져 좌상단만 보임)
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    // 세로형 발굴 시점: 위에서 앞으로 살짝 기울여 두개골(발굴 대상)이 프레임에 꽉.
+    //   두개골 반경 X±5, Z±10 → 여유 포함 영역을 가로·세로 둘 다 담는 거리로.
+    //   (portrait에선 가로 시야가 좁아 가로 맞춤이 더 멀리 필요할 수 있으므로 max)
+    const vfov = camera.fov * Math.PI / 180;
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+    const halfW = 6.5;   // 담을 가로 반폭 (두개골 X±5 + 여유)
+    const halfH = 12.0;  // 담을 세로 반길이 (두개골 Z±10 + 여유)
+    const distForH = halfH / Math.tan(vfov / 2);
+    const distForW = halfW / Math.tan(hfov / 2);
+    const fitDist = Math.max(distForH, distForW);
+    const tilt = THREE.MathUtils.degToRad(16);                // 수직에서 16° 기움(오버헤드 3/4)
+    camera.up.set(0, 1, 0);
+    camera.position.set(0, fitDist * Math.cos(tilt), fitDist * Math.sin(tilt));
+    camera.lookAt(0, HEIGHT_SCALE * START_DEPTH * 0.35, 0);
+    camera.updateMatrixWorld(true);
+  }
+
+  // ============================================================
+  // 하이트맵 → 지오메트리 반영
+  // ============================================================
+  function renderY(i) {
+    const s = soilTop[i], o = objTop[i];
+    return (s > o ? s : o) * HEIGHT_SCALE;   // max(soil,obj)
+  }
+
+  // per-vertex reveal(0..1) + broken(0..1) 계산 → 셰이더가 텍스처 mix
+  //  reveal은 흙을 표면 가까이 팠을 때만 오른다(안 판 흙은 완전히 뼈를 가림).
+  //  BAND는 objTop 최고점의 초기 덮임(=START_DEPTH-objMaxTop)보다 작아야
+  //  0%에서 뼈가 안 비친다. (TOP_FRAC=0.66 → 최고점 초기덮임 ~0.34)
+  //  작게 잡아 시각 노출(텍스처 블렌드)이 상태 발굴률과 어긋나지 않게 한다(바가 뒤처져 보이는 문제 방지).
+  //  min overburden(≈0.82*SD)보다 훨씬 작아 0%에서 뼈 안 비침.
+  const REVEAL_BAND = START_DEPTH * 0.11;
+  function revealFor(i) {
+    if (!isObj[i]) return 0;                 // 흙 열 = 항상 흙
+    const cover = soilTop[i] - objTop[i];    // >0 덮임
+    // cover<=0 → reveal 1, cover>=BAND → reveal 0
+    return 1 - Math.min(1, Math.max(0, cover / REVEAL_BAND));
+  }
+  function brokenFor(i) {
+    if (!isObj[i]) return 0;
+    return soilTop[i] < objTop[i] - BROKEN_TOL ? 1 : 0;
+  }
+
+  // 전체 초기 반영 (reveal→color.r, broken→color.g, 높이→posAttr Y)
+  function fullSync() {
+    const p = posAttr.array, rc = revealAttr.array;
+    for (let i = 0; i < N; i++) {
+      p[i * 3 + 1] = renderY(i);
+      rc[i * 3] = revealFor(i);
+      rc[i * 3 + 1] = brokenFor(i);
+    }
+    posAttr.needsUpdate = true;
+    revealAttr.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+
+  // 증분 반영 (변경된 셀 집합) — 성능
+  function syncCells(cells) {
+    const p = posAttr.array, rc = revealAttr.array;
+    for (let k = 0; k < cells.length; k++) {
+      const i = cells[k];
+      p[i * 3 + 1] = renderY(i);
+      rc[i * 3] = revealFor(i);
+      rc[i * 3 + 1] = brokenFor(i);
+    }
+    posAttr.needsUpdate = true;
+    revealAttr.needsUpdate = true;
+    normalsDirty = true;   // 노멀은 프레임당 1회만 재계산(무거움)
+  }
+  let normalsDirty = false;
+
+  // ============================================================
+  // 발굴 로직
+  // ============================================================
+  let curTool = "shovel";
+  const toolDef = () => TOOL_DEFS[curTool];
+
+  // 격자 셀 (gc,gr)에 현재 도구로 1회 발굴. broke 여부 리턴.
+  const _dirtyCells = [];
+  function digCell(gc, gr, dirMode) {
+    const td = toolDef();
+    const R = td.radius;
+    const dp = td.depthPerStroke;
+    _dirtyCells.length = 0;
+    let anyChange = false, brokeHere = false, revealedHere = false;
+    const R2 = R * R;
+    for (let dr = -R; dr <= R; dr++) {
+      const rr = gr + dr;
+      if (rr < 0 || rr >= ROWS) continue;
+      for (let dc = -R; dc <= R; dc++) {
+        const cc = gc + dc;
+        if (cc < 0 || cc >= COLS) continue;
+        const d2 = dc * dc + dr * dr;
+        if (d2 > R2) continue;
+        const i = rr * COLS + cc;
+        // falloff (중심 1 → 가장자리 0)
+        const dist = Math.sqrt(d2);
+        let fall = 1 - dist / (R + 0.5);
+        if (fall <= 0) continue;
+        fall = fall * fall * (3 - 2 * fall); // smoothstep
+        let remove = dp * fall;
+        // 붓(safe): 오브젝트 위 남은 흙(soilAbove)이 두꺼우면 거의 안 먹힘 → 마무리 전용.
+        //   soilAbove>=BRUSH_MAX → eff 0, <=BRUSH_FULL → eff 1. 오브젝트 없는 열도 동일 감쇠
+        //   (붓은 어차피 겉흙 대량 제거가 불가한 마무리 도구 → 두꺼운 흙 지점에선 무용).
+        if (td.safe) {
+          const ref = isObj[i] ? objTop[i] : 0;
+          const soilAbove = soilTop[i] - ref;              // 오브젝트/바닥 위 남은 흙
+          let eff = 1 - (soilAbove - BRUSH_FULL) / (BRUSH_MAX - BRUSH_FULL);
+          eff = eff <= 0 ? 0 : (eff >= 1 ? 1 : eff * eff * (3 - 2 * eff)); // smoothstep
+          remove *= eff;
+        }
+        let ns = soilTop[i] - remove;
+        if (ns < 0) ns = 0;
+        const wasBroken = isObj[i] && soilTop[i] < objTop[i] - BROKEN_TOL;
+        if (td.safe && isObj[i]) {
+          // 붓: objTop 아래로 못 내림 (clamp) — 절대 손상 없음
+          if (ns < objTop[i]) ns = objTop[i];
+        }
+        if (ns < soilTop[i] - 1e-6) {
+          soilTop[i] = ns;
+          anyChange = true;
+          _dirtyCells.push(i);
+          if (isObj[i]) {
+            if (soilTop[i] < objTop[i] - BROKEN_TOL && !wasBroken) brokeHere = true;
+            if (Math.abs(soilTop[i] - objTop[i]) <= TOL) revealedHere = true;
+          }
+        }
+      }
+    }
+    if (anyChange) {
+      syncCells(_dirtyCells);
+      // 파티클/연출
+      const wy = renderY(gr * COLS + gc);
+      spawnEffect(gc, gr, wy, td, dirMode, brokeHere);
+    }
+    return { change: anyChange, broke: brokeHere, revealed: revealedHere };
+  }
+
+  // 정규화(0..1) → 격자 (gc,gr)
+  function nxyToCell(nx, ny) {
+    let gc = Math.round(nx * (COLS - 1));
+    let gr = Math.round(ny * (ROWS - 1));
+    gc = Math.max(0, Math.min(COLS - 1, gc));
+    gr = Math.max(0, Math.min(ROWS - 1, gr));
+    return [gc, gr];
+  }
+
+  // 셀 격자좌표 → 월드 XZ (그리드 중심)
+  function cellToWorld(gc, gr) {
+    const x = (gc / (COLS - 1) - 0.5) * WORLD_W;
+    const z = (gr / (ROWS - 1) - 0.5) * WORLD_H;
+    return [x, z];
+  }
+
+  // ============================================================
+  // 진행률 / 상태
+  // ============================================================
+  let cleared = false, failed = false;
+  function computeState() {
+    let revealed = 0, broken = 0;
+    for (let i = 0; i < N; i++) {
+      if (!isObj[i]) continue;
+      if (soilTop[i] < objTop[i] - BROKEN_TOL) broken++;
+      else if (soilTop[i] <= objTop[i] + TOL) revealed++;
+    }
+    const revealFrac = totalObjCols ? revealed / totalObjCols : 0;
+    const brokenFrac = totalObjCols ? broken / totalObjCols : 0;
+    return { revealed, broken, revealFrac, brokenFrac };
+  }
+
+  function updateHUD() {
+    const st = computeState();
+    document.getElementById("reveal-fill").style.width = (st.revealFrac * 100).toFixed(1) + "%";
+    document.getElementById("reveal-val").textContent = Math.round(st.revealFrac * 100) + "%";
+    document.getElementById("broken-fill").style.width = (st.brokenFrac * 100).toFixed(1) + "%";
+    document.getElementById("broken-val").textContent = Math.round(st.brokenFrac * 100) + "%";
+
+    if (!cleared && !failed) {
+      if (st.brokenFrac > STAGE.fail.maxBrokenFrac) {
+        failed = true; showOverlay(false);
+      } else if (st.revealFrac >= STAGE.clear.revealFrac - 1e-6) {
+        cleared = true; finishClear();
+      }
+    }
+    return st;
+  }
+
+  // 100% 도달 시: 남은 흙 필름(TOL 이내지만 아직 덮인)을 완전히 걷어 오브젝트를 깨끗이 노출 →
+  // gleam 비트를 준 뒤 CLEAR 오버레이. (사용자 2026-07-01: "100%인데 덜 판 채로 갑자기 끝나는 느낌")
+  function finishClear() {
+    for (let i = 0; i < N; i++) { if (isObj[i] && soilTop[i] > objTop[i]) soilTop[i] = objTop[i]; }
+    fullSync();          // 마지막 흙 필름 제거된 깨끗한 표면으로 리페인트
+    triggerWinShine();   // 발굴 완료 반짝
+    document.getElementById("reveal-fill").style.width = "100%";
+    document.getElementById("reveal-val").textContent = "100%";
+    setTimeout(function(){ showOverlay(true); }, 820);   // "발견!" 비트 후 마무리
+  }
+
+  function showOverlay(win) {
+    const ov = document.getElementById("overlay");
+    ov.className = "show " + (win ? "win" : "lose");
+    document.getElementById("ov-title").textContent = win ? "CLEAR!" : "FAILED";
+    let sub = win ? "완벽하게 발굴했어요!" : "너무 많이 손상됐어요";
+    // 인카운터(지도 셸에서 진입)면 발견물 이름을 자막에 표시
+    if (win && ENCOUNTER.active && ENCOUNTER.name) sub = ENCOUNTER.name + " 발굴 성공!";
+    document.getElementById("ov-sub").textContent = sub;
+    playSfx(win ? "clear" : "break");
+    if (navigator.vibrate) { try { navigator.vibrate(win ? [30, 40, 60] : [80, 30, 80]); } catch (e) {} }
+    if (win) notifyComplete();   // 부모 셸/도감으로 발견 통지 (단독이면 localStorage에만)
+  }
+
+  // ============================================================
+  // 파티클 (풀링)
+  // ============================================================
+  const P_CHUNK = 240, P_DUST = 160, P_SAND = 260;
+  let chunkPool, dustPool, sandPool;
+  const G = -22;   // 중력
+
+  function makePool(count, geoBuild, matBuild) {
+    const mesh = new THREE.InstancedMesh(geoBuild(), matBuild(), count);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.castShadow = false;
+    const dat = [];
+    for (let i = 0; i < count; i++) dat.push({ alive: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0, max: 1, s: 1, rot: 0, vrot: 0 });
+    // 초기: 화면 밖으로
+    const m = new THREE.Matrix4();
+    m.makeScale(0, 0, 0);
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, m);
+    mesh.instanceMatrix.needsUpdate = true;
+    scene.add(mesh);
+    return { mesh, dat, cursor: 0, count };
+  }
+
+  // Soft round particle sprite (radial alpha) so billboards read as SOFT dust/sand — not hard
+  // flat squares (user 2026-07-01: "위에서 내려오는 이상한 파티클" = the big pale square dust planes).
+  let _softTex = null;
+  function softSprite() {
+    if (_softTex) return _softTex;
+    const s = 64, cv = document.createElement('canvas'); cv.width = cv.height = s;
+    const cx = cv.getContext('2d'); const g = cx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.55, 'rgba(255,255,255,0.85)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.fillStyle = g; cx.fillRect(0, 0, s, s);
+    _softTex = new THREE.CanvasTexture(cv); return _softTex;
+  }
+  function initParticles() {
+    const soft = softSprite();
+    chunkPool = makePool(P_CHUNK,
+      () => new THREE.BoxGeometry(1, 1, 1),
+      () => new THREE.MeshStandardMaterial({ color: 0x5a3f27, roughness: 1, metalness: 0, vertexColors: false }));
+    // dust/sand = SOFT round billboards (radial-alpha sprite), tinted by color
+    dustPool = makePool(P_DUST,
+      () => new THREE.PlaneGeometry(1, 1),
+      () => new THREE.MeshBasicMaterial({ map: soft, color: 0x9a7850, transparent: true, opacity: 0.42, depthWrite: false }));
+    sandPool = makePool(P_SAND,
+      () => new THREE.PlaneGeometry(1, 1),
+      () => new THREE.MeshBasicMaterial({ map: soft, color: 0xcdb98a, transparent: true, opacity: 0.9, depthWrite: false }));
+  }
+
+  function poolSpawn(pool) {
+    // 링버퍼: 다음 슬롯 (죽은 것 우선)
+    let idx = -1;
+    for (let k = 0; k < pool.count; k++) {
+      const j = (pool.cursor + k) % pool.count;
+      if (!pool.dat[j].alive) { idx = j; break; }
+    }
+    if (idx < 0) { idx = pool.cursor % pool.count; }   // 다 살아있으면 재사용
+    pool.cursor = (idx + 1) % pool.count;
+    return pool.dat[idx], idx;
+  }
+
+  const _mtx = new THREE.Matrix4(), _q = new THREE.Quaternion(), _pos = new THREE.Vector3(), _scl = new THREE.Vector3();
+  const _euler = new THREE.Euler();
+
+  function spawnEffect(gc, gr, wy, td, dirMode, broke) {
+    // FLYING PARTICLES REMOVED (사용자 2026-07-01: 먼지·모래·흙덩이 파편 모두 위에서 보면 이상함).
+    // 발굴 피드백 = 지형(하이트맵)이 실제로 파여 사라지는 것 + 사운드 + 햅틱 만으로 (더 사실적).
+    // 복원 시: 삽/끌=chunkPool, 붓=sandPool, 먼지=dustPool 스폰 블록을 되살리면 됨.
+  }
+
+  function stepPool(pool, dt, billboard, useGravity) {
+    let anyAlive = false;
+    for (let i = 0; i < pool.count; i++) {
+      const d = pool.dat[i];
+      if (!d.alive) continue;
+      d.life += dt;
+      if (d.life >= d.max) {
+        d.alive = false;
+        _mtx.makeScale(0, 0, 0);
+        pool.mesh.setMatrixAt(i, _mtx);
+        continue;
+      }
+      anyAlive = true;
+      if (useGravity) d.vy += G * dt;
+      d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt;
+      if (d.y < 0.02) { d.y = 0.02; d.vy *= -0.32; d.vx *= 0.6; d.vz *= 0.6; }
+      d.rot += d.vrot * dt;
+      const t = d.life / d.max;
+      const fade = 1 - t;
+      const sc = d.s * (billboard ? (0.6 + fade * 0.8) : 1);
+      _pos.set(d.x, d.y, d.z);
+      if (billboard) {
+        _q.copy(camera.quaternion);
+      } else {
+        _euler.set(d.rot, d.rot * 0.7, d.rot * 0.3);
+        _q.setFromEuler(_euler);
+      }
+      _scl.set(sc, sc, sc);
+      _mtx.compose(_pos, _q, _scl);
+      pool.mesh.setMatrixAt(i, _mtx);
+      // 빌보드 페이드(opacity는 공유 재질이라 개별 불가 → 스케일로 대체)
+    }
+    if (anyAlive || pool._dirty) {
+      pool.mesh.instanceMatrix.needsUpdate = true;
+      pool._dirty = anyAlive;
+    }
+    return anyAlive;
+  }
+
+  // ============================================================
+  // 승리 반짝
+  // ============================================================
+  let winShine = 0;
+  function triggerWinShine() { winShine = 1.2; }
+
+  // ============================================================
+  // 사운드 — Web Audio 매니저 (디코드 1회 → 버퍼 재사용, iOS resume)
+  //   삽/끌=shovel/chisel, 붓=brush, 과굴착=break, 100%=clear.
+  //   에셋 부재/디코드 실패 시 조용히 no-op(단일 HTML·앱 양쪽 안전).
+  // ============================================================
+  const SFX_NAMES = ["shovel", "chisel", "brush", "break", "clear"];
+  let audioCtx = null;
+  const _sfxBuf = {};        // name → AudioBuffer (or null=실패)
+  let _audioReady = false;
+
+  function initAudio() {
+    if (_audioReady) return;
+    _audioReady = true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { audioCtx = new AC(); } catch (e) { audioCtx = null; return; }
+    // data URI 인라인이 있으면(릴리스 베이크) 우선, 없으면 상대경로 fetch(에디터/http)
+    const INLINE = window.__SFX_DATA || {};
+    SFX_NAMES.forEach((name) => {
+      const src = INLINE[name] || ("../assets/audio/sfx_" + name + ".mp3");
+      fetch(src).then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+        .then(ab => new Promise((res, rej) => audioCtx.decodeAudioData(ab, res, rej)))
+        .then(buf => { _sfxBuf[name] = buf; })
+        .catch(() => { _sfxBuf[name] = null; });
+    });
+  }
+
+  // 첫 제스처에 resume (iOS autoplay 정책)
+  function resumeAudio() {
+    initAudio();
+    if (audioCtx && audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) {} }
+  }
+
+  function playSfx(name) {
+    if (!audioCtx) return;
+    const buf = _sfxBuf[name];
+    if (!buf) return;   // undefined(로딩중) 또는 null(실패) → no-op
+    try {
+      const s = audioCtx.createBufferSource();
+      s.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.value = 0.9;
+      s.connect(g); g.connect(audioCtx.destination);
+      s.start(0);
+    } catch (e) { /* no-op */ }
+  }
+
+  // ============================================================
+  // 입력 (포인터 다운/드래그 → 레이캐스트 → 발굴)
+  // ============================================================
+  let pointerDown = false, lastCell = null, lastWorld = null;
+  let sfxCooldown = 0;
+
+  function screenToNDC(clientX, clientY) {
+    ndc.x = (clientX / window.innerWidth) * 2 - 1;
+    ndc.y = -(clientY / window.innerHeight) * 2 + 1;
+  }
+
+  function raycastCell(clientX, clientY) {
+    screenToNDC(clientX, clientY);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.intersectObject(terrain, false);
+    if (!hit.length) return null;
+    const p = hit[0].point;
+    // 월드 XZ → 정규화 → 셀
+    const nx = (p.x / WORLD_W + 0.5);
+    const ny = (p.z / WORLD_H + 0.5);
+    const gc = Math.max(0, Math.min(COLS - 1, Math.round(nx * (COLS - 1))));
+    const gr = Math.max(0, Math.min(ROWS - 1, Math.round(ny * (ROWS - 1))));
+    return { gc, gr, wx: p.x, wz: p.z };
+  }
+
+  function doDig(gc, gr, dirMode) {
+    if (cleared || failed) return;
+    const res = digCell(gc, gr, dirMode);
+    if (res.change) {
+      const td = toolDef();
+      if (sfxCooldown <= 0) { playSfx(td.sfx); sfxCooldown = 0.09; }
+      if (res.broke) {
+        if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
+        playSfx("break");
+      } else if (navigator.vibrate) { try { navigator.vibrate(td.haptic); } catch (e) {} }
+      updateHUD();
+    }
+  }
+
+  function onPointer(clientX, clientY) {
+    const c = raycastCell(clientX, clientY);
+    if (!c) return;
+    let dir = null;
+    const [wx, wz] = cellToWorld(c.gc, c.gr);
+    if (lastWorld) dir = { x: wx - lastWorld.x, z: wz - lastWorld.z };
+    lastWorld = { x: wx, z: wz };
+    // 같은 셀 연타 방지 없음(연속 발굴 허용). 하지만 이웃까지 보간 발굴은 생략(POC)
+    doDig(c.gc, c.gr, dir);
+  }
+
+  function bindInput() {
+    const el = renderer.domElement;
+    // 첫 제스처에 오디오 언락 (iOS) — 캔버스+툴바 어디든
+    const unlock = () => { resumeAudio(); };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true });
+    el.addEventListener("pointerdown", (e) => {
+      pointerDown = true; lastWorld = null;
+      el.setPointerCapture && el.setPointerCapture(e.pointerId);
+      onPointer(e.clientX, e.clientY);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!pointerDown) return;
+      onPointer(e.clientX, e.clientY);
+    });
+    const up = () => { pointerDown = false; lastWorld = null; };
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+    el.addEventListener("pointerleave", up);
+  }
+
+  // ============================================================
+  // 도구 바 UI
+  // ============================================================
+  function buildToolbar() {
+    const bar = document.getElementById("toolbar");
+    bar.innerHTML = "";
+    STAGE.tools.forEach((tk) => {
+      const def = TOOL_DEFS[tk];
+      const b = document.createElement("button");
+      b.className = "tool-btn" + (tk === curTool ? " active" : "");
+      b.dataset.tool = tk;
+      b.innerHTML = `<span class="tool-ico">${def.ico}</span><span class="tool-name">${def.name}</span>`;
+      b.addEventListener("click", () => setTool(tk));
+      bar.appendChild(b);
+    });
+  }
+  function setTool(tk) {
+    if (!TOOL_DEFS[tk]) return;
+    curTool = tk;
+    document.querySelectorAll(".tool-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tool === tk);
+    });
+  }
+
+  // ============================================================
+  // 리셋
+  // ============================================================
+  function resetGame() {
+    soilTop.fill(START_DEPTH);
+    buildObjTop();
+    cleared = false; failed = false;
+    winShine = 0;
+    // 파티클 죽이기
+    [chunkPool, dustPool, sandPool].forEach((pool) => {
+      const m = new THREE.Matrix4(); m.makeScale(0, 0, 0);
+      for (let i = 0; i < pool.count; i++) { pool.dat[i].alive = false; pool.mesh.setMatrixAt(i, m); }
+      pool.mesh.instanceMatrix.needsUpdate = true;
+    });
+    fullSync();
+    document.getElementById("overlay").className = "";
+    setTool(STAGE.tools[0]);
+    updateHUD();
+  }
+
+  // ============================================================
+  // 루프
+  // ============================================================
+  let lastT = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    if (sfxCooldown > 0) sfxCooldown -= dt;
+
+    stepPool(chunkPool, dt, false, true);
+    stepPool(dustPool, dt, true, false);
+    stepPool(sandPool, dt, true, true);
+
+    if (normalsDirty) { geo.computeVertexNormals(); normalsDirty = false; }
+
+    if (winShine > 0) {
+      winShine -= dt;
+      // 승리 반짝: 카메라를 살짝 두개골로 당겨 하이라이트 (셰이더 emissive 대신 카메라 연출)
+    }
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+
+  // ============================================================
+  // QA 훅 (헤드리스 검증)
+  // ============================================================
+  function installQA() {
+    window.__qa = {
+      setTool: (name) => setTool(name),
+      digAt: (nx, ny) => {
+        const [gc, gr] = nxyToCell(nx, ny);
+        doDig(gc, gr, { x: 0.2, z: 0.2 });  // 드래그 방향 더미 (붓 연출용)
+        return { gc, gr };
+      },
+      state: () => {
+        const st = computeState();
+        return {
+          revealFrac: st.revealFrac, brokenFrac: st.brokenFrac,
+          cleared, failed, tool: curTool, totalObjCols
+        };
+      },
+      grid: () => ({ cols: COLS, rows: ROWS }),
+      // soilAbove(오브젝트/바닥 위 남은 흙) at 정규화 (nx,ny) — 드라이버 도구 선택용.
+      //   오브젝트 열: soilTop-objTop, 흙 열: soilTop. (음수면 파고듦=손상)
+      cellSoil: (nx, ny) => {
+        const [gc, gr] = nxyToCell(nx, ny);
+        const i = gr * COLS + gc;
+        const ref = isObj[i] ? objTop[i] : 0;
+        return soilTop[i] - ref;
+      },
+      // 전체 soilAbove 그리드 (Float32Array) — 대량 조회용
+      soilGrid: () => {
+        const out = new Float32Array(N);
+        for (let i = 0; i < N; i++) out[i] = soilTop[i] - (isObj[i] ? objTop[i] : 0);
+        return Array.from(out);
+      },
+      startDepth: () => START_DEPTH,
+      // 디버그: objTop을 저해상도 ASCII로 (형태/배치 검증용)
+      objAscii: (dw, dh) => {
+        dw = dw || 24; dh = dh || 32;
+        const ramp = " .:-=+*#%@";
+        let out = "";
+        for (let ry = 0; ry < dh; ry++) {
+          let line = "";
+          for (let rx = 0; rx < dw; rx++) {
+            const c = Math.min(COLS - 1, Math.floor((rx + 0.5) / dw * COLS));
+            const r = Math.min(ROWS - 1, Math.floor((ry + 0.5) / dh * ROWS));
+            const v = objTop[r * COLS + c] / (START_DEPTH * 0.82);
+            line += ramp[Math.max(0, Math.min(9, Math.round(v * 9)))];
+          }
+          out += line + "\n";
+        }
+        return out;
+      },
+      // 편의: 오브젝트 열 목록(정규화 좌표) — 붓 클리어 시뮬용
+      objCellsNorm: () => {
+        const arr = [];
+        for (let i = 0; i < N; i++) {
+          if (isObj[i]) {
+            const r = (i / COLS) | 0, c = i % COLS;
+            arr.push([c / (COLS - 1), r / (ROWS - 1)]);
+          }
+        }
+        return arr;
+      },
+      reset: () => resetGame(),
+      // project a normalized (nx,ny) dig point to CSS screen px (for a demo touch-cursor overlay)
+      projNxy: (nx, ny) => {
+        const [gc, gr] = nxyToCell(nx, ny); const [wx, wz] = cellToWorld(gc, gr);
+        const v = new THREE.Vector3(wx, HEIGHT_SCALE * START_DEPTH * 0.5, wz).project(camera);
+        const el = renderer.domElement, r = el.getBoundingClientRect();
+        return { x: (v.x * 0.5 + 0.5) * r.width + r.left, y: (-v.y * 0.5 + 0.5) * r.height + r.top };
+      },
+      // 머니샷 검증용: 주변 흙을 걷어 오브젝트만 노출 (형태 육안 확인)
+      _stripSoil: () => {
+        for (let i = 0; i < N; i++) soilTop[i] = isObj[i] ? objTop[i] : 0.02;
+        fullSync(); updateHUD();
+      }
+    };
+  }
+
+  // ============================================================
+  // BOOT
+  // ============================================================
+  function boot() {
+    if (typeof THREE === "undefined") {
+      document.body.innerHTML = "<div style='color:#fff;padding:40px;font:16px sans-serif'>Three.js 로드 실패 (../vendor/three.r128.min.js)</div>";
+      return;
+    }
+    initThree();
+    buildObjTop();
+    soilTop.fill(START_DEPTH);
+    fullSync();
+    buildToolbar();
+    setTool(STAGE.tools[0]);
+    bindInput();
+    initAudio();     // 버퍼 프리로드(디코드 async; 재생은 첫 제스처 resume 후)
+    installQA();
+    updateHUD();
+
+    document.getElementById("ov-retry").addEventListener("click", resetGame);
+    document.getElementById("overlay").addEventListener("click", (e) => {
+      if (e.target.id === "overlay" || e.target.id === "ov-sub" || e.target.id === "ov-title") resetGame();
+    });
+
+    lastT = performance.now();
+    requestAnimationFrame(loop);
+    window.__ready = true;
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
