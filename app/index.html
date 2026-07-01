@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Fossil Dig — 발굴 지도</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9B%8F%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="../vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="../vendor/maplibre/maplibre-gl.css">
 <style>
   :root {
     --bg:#20160d; --panel:#2a1d12; --panel2:#37271a; --line:rgba(255,255,255,.08);
@@ -16,8 +16,15 @@
   html,body { width:100%; height:100%; overflow:hidden; background:var(--bg);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--cream);
     user-select:none; -webkit-user-select:none; }
-  #map { position:fixed; inset:0; z-index:1; background:#3a4a3a; }
-  .leaflet-container { background:#33403a; font-family:inherit; }
+  /* 지도(밑) + 캐릭터 3D 캔버스(위, 이벤트 통과) 모두 풀뷰포트 */
+  #map { position:fixed; inset:0; z-index:1; background:#20304a; }
+  .maplibregl-map { background:#20304a; font-family:inherit; }
+  /* 지도 위 3D 캐릭터/오브젝트용 오버레이 캔버스는 MapLibre CustomLayer가 #map 내부에 그린다.
+     차선책(마커) 캐릭터 스프라이트: */
+  .player-sprite { will-change:transform; pointer-events:none; }
+  /* MapLibre 저작권/로고는 살짝 어둡게 */
+  .maplibregl-ctrl-attrib { font-size:9px; opacity:.55; }
+  .maplibregl-ctrl-attrib a { color:var(--sub); }
 
   /* 상단 헤더 */
   #topbar { position:fixed; left:0; right:0; top:0; z-index:1000;
@@ -34,6 +41,16 @@
     font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;
     backdrop-filter:blur(4px); }
   .icon-btn:active { transform:scale(.92); }
+
+  /* 발굴 지점 마커 (기운 3D 지도 위에 upright) */
+  .spot-marker { pointer-events:auto; cursor:pointer; will-change:transform;
+    width:34px; height:44px; display:flex; align-items:flex-end; justify-content:center; }
+  .spot-marker .pin { width:30px; height:30px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+    border:2px solid rgba(255,255,255,.88); box-shadow:0 3px 8px rgba(0,0,0,.55);
+    display:flex; align-items:center; justify-content:center; }
+  .spot-marker .pin > span { transform:rotate(45deg); font-size:15px; line-height:1; }
+  .spot-marker.pulsing .pin { animation:spinPulse 1.6s ease-in-out infinite; }
+  @keyframes spinPulse { 0%,100%{ box-shadow:0 3px 8px rgba(0,0,0,.55);} 50%{ box-shadow:0 3px 16px rgba(240,198,116,.9);} }
 
   /* 하단 발견 버튼 */
   #discover-bar { position:fixed; left:0; right:0; bottom:0; z-index:1000;
@@ -175,7 +192,9 @@
 
 <div id="toast"></div>
 
-<script src="../vendor/leaflet/leaflet.js"></script>
+<!-- 벤더: MapLibre GL JS(BSD) + Three.js r128 (상대경로, 이중타깃 호환) -->
+<script src="../vendor/maplibre/maplibre-gl.js"></script>
+<script src="../vendor/three.r128.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -193,6 +212,13 @@
   const COOLDOWN_MS = 20000;       // 발굴 후 그 지점 재등장 쿨다운(POC: 제거 후 재스폰)
   const LS_COLLECTION = "fossildig_collection";
   const LS_PENDING = "fossildig_pending";     // 발굴게임이 이중기록하는 큐(L22 폴백)
+
+  // 3D 지도(포켓몬고식) 카메라 파라미터
+  const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";  // 무료·키없음 벡터 스타일
+  const MAP_ZOOM = 17.4;           // 캐릭터 걷기 시점(건물이 보이는 근접 줌)
+  const MAP_PITCH = 55;            // 기울기(포켓몬고식 3/4뷰)
+  const MAP_MAX_PITCH = 62;
+  const noStyleQP = QP.has("nostyle");   // 헤드리스/오프라인 테스트: 벡터스타일 스킵(빈 배경)
 
   // 지역 loot 테이블 (fetch 실패 시 인라인 폴백 사용)
   let REGIONS = null;
@@ -220,14 +246,15 @@
   // ==========================================================================
   // 상태
   // ==========================================================================
-  let map, playerMarker, playerCircle;
-  let spots = [];              // { id, lat, lng, marker, item, cooldownUntil }
+  let map = null;              // MapLibre 인스턴스
+  let mapReady = false;
+  let spots = [];              // { id, lat, lng, marker, el, item, cooldownUntil }
   let player = { lat: null, lng: null, acc: null };
+  let playerHeading = 0;       // 이동방향(도) — 캐릭터 회전 + bearing 추종용
   let curRegionKey = "default";
   let curRegionMeta = { label:"미지의 대지", flag:"🌍" };
   let activeSpot = null;       // 현재 발굴 중인 spot
   let mockWatchTimer = null;
-  let geocodeTimer = 0;
   let lastGeocodeAt = 0;
 
   // ==========================================================================
@@ -244,6 +271,13 @@
     const dLat = dN / 111320;
     const dLng = dE / (111320 * Math.cos(lat * Math.PI/180));
     return [lat + dLat, lng + dLng];
+  }
+  // 방위각(도, 북=0, 동=90) — (lat1,lng1)→(lat2,lng2)
+  function bearingDeg(a, b, c, d) {
+    const toR = Math.PI/180, toD = 180/Math.PI;
+    const y = Math.sin((d-b)*toR) * Math.cos(c*toR);
+    const x = Math.cos(a*toR)*Math.sin(c*toR) - Math.sin(a*toR)*Math.cos(c*toR)*Math.cos((d-b)*toR);
+    return (Math.atan2(y, x)*toD + 360) % 360;
   }
   function rand(a, b) { return a + Math.random()*(b-a); }
   function toast(msg, ms) {
@@ -442,23 +476,21 @@
   });
 
   // ==========================================================================
-  // 스폰 지점
+  // 스폰 지점 (MapLibre DOM 마커 — 기운 지도 위 upright, 값싸고 견고)
   // ==========================================================================
-  function spotDivIcon(rarity) {
+  function makeSpotEl(rarity) {
     const col = rarityColor(rarity);
-    return L.divIcon({
-      className: "spot-icon",
-      html: '<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);'
-        + 'background:'+col+';border:2px solid rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.5);">'
-        + '<div style="transform:rotate(45deg);text-align:center;line-height:24px;font-size:13px;">⛏️</div></div>',
-      iconSize: [26,26], iconAnchor: [13,26]
-    });
+    const wrap = document.createElement("div");
+    wrap.className = "spot-marker pulsing";
+    wrap.innerHTML = '<div class="pin" style="background:'+col+';"><span>⛏️</span></div>';
+    return wrap;
   }
   function spawnSpotsAround(lat, lng) {
     // 기존 제거
-    spots.forEach(s => { if (s.marker) map.removeLayer(s.marker); });
+    spots.forEach(s => { if (s.marker) s.marker.remove(); });
     spots = [];
     for (let i=0; i<SPOT_COUNT; i++) spawnOneSpot(lat, lng);
+    updateDiscover();
   }
   let _spotSeq = 0;
   function spawnOneSpot(lat, lng) {
@@ -467,15 +499,29 @@
     const [slat, slng] = offsetMeters(lat, lng, Math.cos(ang)*dist, Math.sin(ang)*dist);
     const item = rollLoot(curRegionKey);
     const id = "spot_" + (++_spotSeq);
-    const marker = L.marker([slat, slng], { icon: spotDivIcon(item.rarity) }).addTo(map);
-    marker.bindPopup((curRegionMeta.flag||"") + " 발굴 지점");
-    spots.push({ id, lat:slat, lng:slng, marker, item, cooldownUntil:0 });
+    let marker = null, el = null;
+    if (map && window.maplibregl) {
+      el = makeSpotEl(item.rarity);
+      // anchor bottom: 핀 꼭지점이 좌표에 닿게
+      marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([slng, slat]).addTo(map);
+      el.addEventListener("click", () => onSpotTap(id));
+    }
+    spots.push({ id, lat:slat, lng:slng, marker, el, item, cooldownUntil:0 });
+  }
+  function onSpotTap(id) {
+    const s = spots.find(x => x.id === id);
+    if (!s) return;
+    // 근접(발견 반경) 이내면 바로 발굴, 아니면 안내
+    const d = player.lat!=null ? haversine(player.lat, player.lng, s.lat, s.lng) : Infinity;
+    if (d <= DISCOVER_RADIUS_M) openDig(s.item, s);
+    else toast("가까이 가야 발굴할 수 있어요 · " + Math.round(d) + "m", 1800);
   }
   function consumeSpot(spot) {
     if (!spot) return;
     const idx = spots.indexOf(spot);
     if (idx>=0) {
-      if (spot.marker) map.removeLayer(spot.marker);
+      if (spot.marker) spot.marker.remove();
       spots.splice(idx, 1);
     }
     // 쿨다운 후 플레이어 주변에 새 지점 하나 재스폰(POC: 항상 놀 거리 유지)
@@ -524,25 +570,23 @@
   let regionResolvedFor = null;   // 마지막으로 지역판정한 대략 좌표
   function onPositionUpdate(lat, lng, acc) {
     const first = (player.lat == null);
+    // 이동방향(heading) 갱신 — 캐릭터 회전/카메라 bearing
+    if (!first && player.lat != null) {
+      const moved = haversine(player.lat, player.lng, lat, lng);
+      if (moved > 0.6) playerHeading = bearingDeg(player.lat, player.lng, lat, lng);
+    }
     player.lat = lat; player.lng = lng; player.acc = acc || null;
 
-    if (!playerMarker) {
-      playerMarker = L.circleMarker([lat, lng], {
-        radius: 9, color:"#fff", weight:2, fillColor:"#3d8bfd", fillOpacity:1
-      }).addTo(map);
-      playerCircle = L.circle([lat, lng], { radius: DISCOVER_RADIUS_M, color:"#3d8bfd",
-        weight:1, opacity:.4, fillColor:"#3d8bfd", fillOpacity:.08 }).addTo(map);
-    } else {
-      playerMarker.setLatLng([lat, lng]);
-      playerCircle.setLatLng([lat, lng]);
-    }
+    // 3D 캐릭터 위치/회전 갱신 (지도 위)
+    updatePlayerGraphic(lat, lng);
 
     if (first) {
-      map.setView([lat, lng], 16);
+      centerCameraOnPlayer(true);
       // 첫 위치 → 지역 판정 + 스폰
       resolveAndSpawn(lat, lng, true);
       regionResolvedFor = [lat, lng];
     } else {
+      centerCameraOnPlayer(false);
       // 크게 이동하면(>2km) 지역 재판정 (throttle)
       if (regionResolvedFor && haversine(regionResolvedFor[0], regionResolvedFor[1], lat, lng) > 2000
           && Date.now() - lastGeocodeAt > 8000) {
@@ -559,6 +603,289 @@
     setRegion(r.key);
     if (r.source === "bbox") toast("위치 서비스 대략 판정: " + curRegionMeta.label, 2600);
     if (doSpawn) spawnSpotsAround(lat, lng);
+  }
+
+  // ==========================================================================
+  // 3D 지도 (MapLibre GL JS) — 포켓몬고식 카메라
+  // ==========================================================================
+  function centerCameraOnPlayer(instant) {
+    if (!map || player.lat == null) return;
+    const target = { center: [player.lng, player.lat], pitch: MAP_PITCH };
+    // bearing 부드럽게 이동방향 추종(선택). 급회전 방지 위해 easeTo에 맡김.
+    if (QP.has("followbearing")) target.bearing = playerHeading;
+    if (instant) {
+      target.zoom = MAP_ZOOM;
+      map.jumpTo(target);
+    } else {
+      map.easeTo(Object.assign({ duration: 600, essential: true }, target));
+    }
+  }
+
+  function initMap() {
+    if (!window.maplibregl) { console.warn("[map] maplibre 미로딩 — 지도 없이 로직만"); return; }
+    const startCenter = [126.9780, 37.5665];  // lng,lat (위치 확정 전 임시)
+    // 오프라인/헤드리스에서도 인스턴스는 뜨도록: 스타일 로드 실패해도 map 객체는 유효.
+    const style = noStyleQP ? emptyStyle() : MAP_STYLE_URL;
+    try {
+      map = new maplibregl.Map({
+        container: "map",
+        style: style,
+        center: startCenter,
+        zoom: MAP_ZOOM,
+        pitch: MAP_PITCH,
+        bearing: 0,
+        maxPitch: MAP_MAX_PITCH,
+        attributionControl: true,
+        // 모바일 성능: DPR 캡(레티나에서 과부하 방지)
+        pixelRatio: Math.min(window.devicePixelRatio || 1, 1.75),
+        // 사용자 상호작용은 살짝 제한(포켓몬고식: 회전/기울기 자유, 이동은 캐릭터 중심)
+        dragRotate: true,
+        touchZoomRotate: true,
+        keyboard: false,
+        fadeDuration: 0
+      });
+    } catch (e) {
+      console.warn("[map] MapLibre 생성 실패, 지도 없이 진행:", e && e.message);
+      map = null; return;
+    }
+
+    // ⚠️ 'load' 이벤트는 스타일 + '초기 가시 타일'까지 다 로드돼야 발화한다.
+    //   OpenFreeMap 벡터타일이 (오프라인/헤드리스) 안 뜨면 load가 영영 안 올 수 있다.
+    //   → 캐릭터/건물은 '스타일 파싱 완료(styledata + isStyleLoaded)'만으로 얹는다(타일 무관).
+    function onStyleReady() {
+      if (window.__mapLoaded) return;
+      if (!map.isStyleLoaded()) return;   // 스타일 파싱 전이면 다음 styledata에서
+      window.__mapLoaded = true;
+      mapReady = true;
+      ensureBuildings3D();     // 건물 3D 돌출 확인/강화
+      addPlayerLayer();        // Three.js 캐릭터 CustomLayer
+    }
+    map.on("styledata", onStyleReady);
+    map.on("load", onStyleReady);          // (타일까지 뜨면 여기서도 멱등 처리)
+    map.on("error", (e) => {
+      // 타일/스프라이트/글리프 네트워크 실패 → graceful. 콘솔에러로 죽지 않게 흡수.
+      const msg = (e && e.error && e.error.message) || "map error";
+      console.warn("[map] (graceful)", msg);
+      window.__mapErrorCount = (window.__mapErrorCount||0) + 1;
+    });
+    // 최후 백업: 스타일 이벤트가 지연돼도 일정 시간 후 강제 시도(멱등).
+    //   빈 스타일/오프라인처럼 isStyleLoaded가 늦게/애매하게 오는 경우까지 캐릭터를 반드시 얹는다.
+    setTimeout(() => {
+      try {
+        onStyleReady();
+        if (!window.__playerLayerAdded) { window.__mapLoaded = true; mapReady = true; ensureBuildings3D(); addPlayerLayer(); }
+      } catch (e) {}
+    }, 1500);
+  }
+
+  // 완전 빈 스타일(오프라인/헤드리스) — 배경만
+  function emptyStyle() {
+    return { version: 8, name: "empty",
+      sources: {}, glyphs: null,
+      layers: [ { id:"bg", type:"background", paint:{ "background-color":"#20304a" } } ] };
+  }
+
+  // 건물 3D 돌출: liberty 스타일엔 'building-3d'(fill-extrusion)가 이미 있음.
+  //  스타일에 없으면(빈/다른 스타일) 스킵. 있으면 최소 줌에서도 보이도록 살짝 조정.
+  function ensureBuildings3D() {
+    if (!map || !map.getStyle) return;
+    try {
+      let has3d = false;
+      const layers = map.getStyle().layers || [];
+      for (const l of layers) {
+        if (l.type === "fill-extrusion") { has3d = true;
+          // 낮은 줌에서도 건물이 보이도록 minzoom 완화(과하지 않게)
+          try { if (map.getLayer(l.id)) map.setLayerZoomRange(l.id, 14, 24); } catch(e){}
+        }
+      }
+      if (!has3d && map.getSource("openmaptiles")) {
+        // building fill-extrusion 레이어 직접 추가(스타일에 없을 때만)
+        map.addLayer({
+          id: "fossil-buildings-3d", type: "fill-extrusion", source: "openmaptiles",
+          "source-layer": "building", minzoom: 14,
+          paint: {
+            "fill-extrusion-color": "#5a5148",
+            "fill-extrusion-height": ["coalesce", ["get","render_height"], ["get","height"], 8],
+            "fill-extrusion-base": ["coalesce", ["get","render_min_height"], 0],
+            "fill-extrusion-opacity": 0.85
+          }
+        });
+      }
+    } catch (e) { /* graceful */ }
+  }
+
+  // ==========================================================================
+  // 3D 캐릭터 (탐험가) — MapLibre CustomLayer + Three.js
+  //   Mercator 매트릭스에 정합(threebox 방식의 커스텀 매트릭스).
+  //   정합 실패/렌더 불가면 DOM 마커 스프라이트로 폴백.
+  // ==========================================================================
+  let charState = {
+    lng: 126.9780, lat: 37.5665, headingRad: 0,   // 렌더 대상 위치/회전
+    layerAdded: false, three: null, useMarker: false, markerObj: null, markerEl: null
+  };
+
+  // 로우폴리 탐험가 메시 생성 (절차적, 어스톤).
+  //  ⚠️ Mercator는 Z가 위(altitude)다 → 모델을 처음부터 **Z-up**으로 세워 만든다
+  //     (feet at z=0, head at +z). 정면 = +Y(mercator y는 남쪽이 +지만 heading yaw로 보정).
+  //     이렇게 하면 render 매트릭스는 translate+scale+rotateZ(heading)만으로 정합돼
+  //     rotateX/Y-flip 조합의 '캐릭터가 땅에 파묻히거나 뒤집히는' 정합오류가 없다.
+  function buildExplorer(THREE) {
+    const grp = new THREE.Group();
+    const M = (col, rough) => new THREE.MeshStandardMaterial({ color: col, roughness: rough==null?0.85:rough, metalness: 0.0 });
+    const matSkin = M(0xe3b48f), matBody = M(0x7a5a34), matPants = M(0x4b3925),
+          matHat = M(0xb8894a), matBoot = M(0x2e2013), matPack = M(0x8a5a2a);
+    // Z-up 배치: position (x=좌우, y=전후[+정면], z=높이)
+    // 다리(둘)
+    const legGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.55, 8);
+    [-0.16, 0.16].forEach(x => {
+      const leg = new THREE.Mesh(legGeo, matPants); leg.rotation.x = Math.PI/2; leg.position.set(x, 0, 0.30); leg.castShadow=true; grp.add(leg);
+      const boot = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.2,0.16,8), matBoot);
+      boot.rotation.x = Math.PI/2; boot.position.set(x, 0.02, 0.08); grp.add(boot);
+    });
+    // 몸통(둥근 배럴)
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.30, 0.62, 12), matBody);
+    body.rotation.x = Math.PI/2; body.position.set(0, 0, 0.86); body.castShadow=true; grp.add(body);
+    // 팔(둘)
+    const armGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.5, 8);
+    [-0.4, 0.4].forEach(x => {
+      const arm = new THREE.Mesh(armGeo, matBody); arm.rotation.x = Math.PI/2;
+      arm.position.set(x, 0, 0.9); arm.rotation.y = x<0 ? 0.28 : -0.28; grp.add(arm);
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), matSkin);
+      hand.position.set(x*1.18, 0, 0.66); grp.add(hand);
+    });
+    // 머리(구)
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), matSkin);
+    head.position.set(0, 0, 1.34); head.castShadow=true; grp.add(head);
+    // 탐험가 모자(챙 넓은) — 넓은 브림 + 원뿔 크라운
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.05, 18), matHat);
+    brim.rotation.x = Math.PI/2; brim.position.set(0, 0, 1.5); grp.add(brim);
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.3, 16), matHat);
+    crown.rotation.x = -Math.PI/2; crown.position.set(0, 0, 1.66); grp.add(crown);
+    // 등짐(백팩) — 뒤(-Y)
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.24, 0.44), matPack);
+    pack.position.set(0, -0.32, 0.92); grp.add(pack);
+    // 코(작은 원뿔, 정면 +Y 표시)
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 8), matSkin);
+    nose.rotation.x = -Math.PI/2; nose.position.set(0, 0.27, 1.32); grp.add(nose);
+    return grp;
+  }
+
+  // 메트릭스 정합 CustomLayer. MapLibre가 프레임마다 matrix를 넘겨준다.
+  function addPlayerLayer() {
+    if (charState.layerAdded || !map || typeof THREE === "undefined") return;
+    charState.layerAdded = true;
+    window.__playerLayerAdded = true;
+
+    const layer = {
+      id: "explorer-3d",
+      type: "custom",
+      renderingMode: "3d",
+      onAdd: function (m, gl) {
+        try {
+          const three = {};
+          three.camera = new THREE.Camera();
+          three.scene = new THREE.Scene();
+          // 라이팅(어스톤): 반구광 + 방향광
+          const hemi = new THREE.HemisphereLight(0xffffff, 0x8a7a5a, 0.9); three.scene.add(hemi);
+          const dir = new THREE.DirectionalLight(0xfff2d6, 1.1); dir.position.set(0.5, 1, 0.3); three.scene.add(dir);
+          three.explorer = buildExplorer(THREE);
+          // 발밑 그림자 디스크 (지도 위 '서 있는' 느낌 보강)
+          const shadow = new THREE.Mesh(
+            new THREE.CircleGeometry(0.55, 24),
+            new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+          shadow.position.set(0, 0, 0.02);   // 발밑(Z-up이라 지면 살짝 위)
+          three.explorer.add(shadow);
+          // 캐릭터는 지도 위에 '올라타' 보이도록 depth test 끄고 그린다(맵 건물에 하반신 가림 방지).
+          three.explorer.traverse((o) => { if (o.material) { o.material.depthTest = false; o.material.depthWrite = false; o.renderOrder = 999; } });
+          three.explorer.renderOrder = 999;
+          three.scene.add(three.explorer);
+          three.renderer = new THREE.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true });
+          three.renderer.autoClear = false;
+          charState.three = three;
+        } catch (e) {
+          console.warn("[char] Three.js CustomLayer 초기화 실패 → 마커 폴백", e && e.message);
+          charState.useMarker = true;
+          addMarkerFallback();
+        }
+      },
+      render: function (gl, matrix) {
+        const three = charState.three;
+        if (!three || charState.useMarker) return;
+        try {
+          // 캐릭터 위치 = Mercator 좌표. 모델 크기 = meterInMercatorCoordinateUnits 기반 스케일.
+          const mc = maplibregl.MercatorCoordinate.fromLngLat([charState.lng, charState.lat], 0);
+          const s = mc.meterInMercatorCoordinateUnits() * 14;  // 캐릭터 높이 ≈ 14m 상당(포켓몬고식 큼직한 존재감)
+          const m = new THREE.Matrix4().fromArray(matrix);
+          // 모델(Z-up)→mercator 월드: translate to merc → scale(X동, Y남반전, Z업) → yaw(heading).
+          //  mercator Y는 남쪽이 + 이므로 Y에 -s(반전)로 모델 +Y(정면)를 지도 북쪽에 맞춘다.
+          //  Z-up 모델이라 rotateX 불필요 → 땅에 파묻힘/뒤집힘 정합오류 없음.
+          const l = new THREE.Matrix4()
+            .makeTranslation(mc.x, mc.y, mc.z || 0)
+            .multiply(new THREE.Matrix4().makeScale(s, -s, s));
+          // 이동방향 회전(헤딩): Z축(업) 기준 yaw
+          const yaw = new THREE.Matrix4().makeRotationZ(charState.headingRad);
+          three.camera.projectionMatrix = m.multiply(l).multiply(yaw);
+          three.renderer.resetState();
+          // 캐릭터를 맵 위에 얹기: depth 버퍼 클리어 후 depth test 없이 렌더(하반신 가림 방지)
+          try { gl.clear(gl.DEPTH_BUFFER_BIT); } catch (e) {}
+          three.renderer.render(three.scene, three.camera);
+          map.triggerRepaint();
+          window.__charRendered = true;
+        } catch (e) {
+          if (!charState.useMarker) {
+            console.warn("[char] 렌더 실패 → 마커 폴백", e && e.message);
+            charState.useMarker = true;
+            addMarkerFallback();
+          }
+        }
+      }
+    };
+    try { map.addLayer(layer); }
+    catch (e) {
+      console.warn("[char] addLayer 실패 → 마커 폴백", e && e.message);
+      charState.useMarker = true; addMarkerFallback();
+    }
+  }
+
+  // 차선책: DOM/캔버스 스프라이트 캐릭터 마커 (기운 지도 위 upright)
+  function addMarkerFallback() {
+    if (charState.markerObj || !map || !window.maplibregl) return;
+    const el = document.createElement("div");
+    el.className = "player-sprite";
+    el.style.cssText = "width:46px;height:64px;";
+    el.innerHTML = playerSpriteSVG();
+    charState.markerEl = el;
+    charState.markerObj = new maplibregl.Marker({ element: el, anchor: "bottom", rotationAlignment: "viewport" })
+      .setLngLat([charState.lng, charState.lat]).addTo(map);
+    window.__charMarkerFallback = true;
+  }
+  // 로우폴리 탐험가 SVG (어스톤) — 마커 폴백용 (upright 인식 가능)
+  function playerSpriteSVG() {
+    return '<svg viewBox="0 0 46 64" width="46" height="64" xmlns="http://www.w3.org/2000/svg">'
+      + '<ellipse cx="23" cy="60" rx="14" ry="3.5" fill="rgba(0,0,0,.32)"/>'
+      + '<rect x="17" y="40" width="5" height="16" rx="2.5" fill="#4b3925"/>'
+      + '<rect x="24" y="40" width="5" height="16" rx="2.5" fill="#4b3925"/>'
+      + '<rect x="16" y="53" width="7" height="6" rx="2" fill="#2e2013"/>'
+      + '<rect x="23" y="53" width="7" height="6" rx="2" fill="#2e2013"/>'
+      + '<rect x="14" y="24" width="18" height="20" rx="7" fill="#7a5a34"/>'
+      + '<rect x="9" y="26" width="6" height="15" rx="3" fill="#7a5a34"/>'
+      + '<rect x="31" y="26" width="6" height="15" rx="3" fill="#7a5a34"/>'
+      + '<circle cx="23" cy="16" r="9" fill="#e3b48f"/>'
+      + '<ellipse cx="23" cy="10" rx="15" ry="4" fill="#b8894a"/>'
+      + '<path d="M15 10 Q23 -2 31 10 Z" fill="#b8894a"/>'
+      + '</svg>';
+  }
+
+  // 플레이어 그래픽 갱신(3D 캐릭터 or 마커 폴백 공통)
+  function updatePlayerGraphic(lat, lng) {
+    charState.lng = lng; charState.lat = lat;
+    charState.headingRad = -playerHeading * Math.PI/180;   // 지도 북기준 → 모델 yaw
+    if (charState.useMarker && charState.markerObj) {
+      charState.markerObj.setLngLat([lng, lat]);
+    } else if (charState.markerObj) {
+      charState.markerObj.setLngLat([lng, lat]);
+    }
+    if (map) map.triggerRepaint();
   }
 
   // ==========================================================================
@@ -686,23 +1013,12 @@
     document.getElementById("collection").classList.remove("show");
   });
   document.getElementById("btn-locate").addEventListener("click", () => {
-    if (player.lat != null) map.setView([player.lat, player.lng], 16);
+    if (player.lat != null) { centerCameraOnPlayer(false); }
   });
 
   // ==========================================================================
   // 부팅
   // ==========================================================================
-  function initMap() {
-    // 마커 이미지 상대경로 (vendor)
-    L.Icon.Default.prototype.options.imagePath = "../vendor/leaflet/images/";
-    map = L.map("map", { zoomControl:false, attributionControl:true }).setView([37.5665,126.9780], 3);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19, crossOrigin: true,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-    L.control.zoom({ position:"bottomleft" }).addTo(map);
-  }
-
   async function loadRegions() {
     try {
       const res = await fetch(REGIONS_URL, { cache:"no-cache" });
@@ -725,8 +1041,26 @@
   window.__qa = {
     ready: () => !!window.__ready,
     isMock: () => MOCK,
-    // mock 좌표 강제 세팅 (지역 판정 + 스폰까지 대기 가능하도록 async 아님, updateDiscover는 즉시)
+    // 지도 상태 검증
+    mapExists: () => !!map,
+    mapLoaded: () => !!window.__mapLoaded,
+    mapPitch: () => map ? map.getPitch() : null,
+    mapBearing: () => map ? map.getBearing() : null,
+    mapZoom: () => map ? map.getZoom() : null,
+    mapCenter: () => map ? (function(){ const c=map.getCenter(); return { lng:c.lng, lat:c.lat }; })() : null,
+    has3DBuildings: () => {
+      if (!map || !map.getStyle) return false;
+      try { return (map.getStyle().layers||[]).some(l => l.type === "fill-extrusion"); } catch(e){ return false; }
+    },
+    // 캐릭터 검증
+    charLayerAdded: () => !!charState.layerAdded,
+    charRendered: () => !!window.__charRendered,
+    charMarkerFallback: () => !!window.__charMarkerFallback,
+    charExists: () => !!(charState.layerAdded || charState.markerObj),
+    charPos: () => ({ lng: charState.lng, lat: charState.lat }),
+    // mock 좌표 강제 세팅
     setPos: (lat, lng) => { onPositionUpdate(lat, lng, 5); return player; },
+    playerPos: () => ({ lat: player.lat, lng: player.lng }),
     // 지역 강제 (테스트: 특정 지역 loot 검증용)
     forceRegion: (key) => { setRegion(key); if (player.lat!=null) spawnSpotsAround(player.lat, player.lng); return curRegionKey; },
     region: () => curRegionKey,
@@ -736,6 +1070,8 @@
     resolveRegion: (lat, lng) => resolveRegion(lat, lng),   // async
     spots: () => spots.map(s => ({ id:s.id, lat:s.lat, lng:s.lng, item:s.item,
       dist: player.lat!=null ? haversine(player.lat,player.lng,s.lat,s.lng) : null })),
+    spotCount: () => spots.length,
+    spotMarkersOnMap: () => spots.filter(s => !!s.marker).length,
     // 플레이어를 가장 가까운 spot 위로 순간이동 (in-range 강제)
     teleportToNearestSpot: () => {
       let best=null,bd=Infinity;
