@@ -213,12 +213,120 @@
   const LS_COLLECTION = "fossildig_collection";
   const LS_PENDING = "fossildig_pending";     // 발굴게임이 이중기록하는 큐(L22 폴백)
 
-  // 3D 지도(포켓몬고식) 카메라 파라미터
-  const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";  // 무료·키없음 벡터 스타일
+  // 3D 지도(포켓몬고/피크민식 미니멀 스타일라이즈드) 파라미터
+  //  liberty(상세 구글식 지도)를 쓰지 않는다. liberty의 '벡터 소스'만 재사용하고
+  //  레이어는 우리가 직접 만든 미니멀 세트(바닥+물+길+로우폴리 건물)로 교체한다.
+  const LIBERTY_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"; // 소스만 빌려옴
+  const OFM_VECTOR_TILES = "https://tiles.openfreemap.org/planet";          // fetch 실패 시 소스 폴백
   const MAP_ZOOM = 17.4;           // 캐릭터 걷기 시점(건물이 보이는 근접 줌)
   const MAP_PITCH = 55;            // 기울기(포켓몬고식 3/4뷰)
   const MAP_MAX_PITCH = 62;
   const noStyleQP = QP.has("nostyle");   // 헤드리스/오프라인 테스트: 벡터스타일 스킵(빈 배경)
+
+  // --- 미니멀 스타일 팔레트 (파스텔/어스톤, 회색 금지) ---
+  const PAL = {
+    ground:   "#cfe3b8",   // 소프트 그린 잔디 바닥(포켓몬고 느낌)
+    grass:    "#c2dca6",   // landcover grass — 은은한 그린
+    wood:     "#b6d29a",   // landcover wood/forest — 살짝 진한 그린
+    park:     "#c7e2ac",   // park fill
+    sand:     "#ecdcae",   // sand — 따뜻한 베이지
+    water:    "#aee0f2",   // 플랫 소프트 블루
+    roadFill: "#fffdf5",   // 도로 채움(크림 화이트)
+    roadCase: "#e6dcc2",   // 도로 케이싱(연한 탄)
+    minorFill:"#fbf6e8",   // 좁은 길 채움
+    // 건물(파스텔 크림/탄) — 벽 기본, 윗면 살짝 밝게. 회색 아님.
+    bldgWall: "#e8d3a8",   // 벽 크림/탄
+    bldgAlt:  "#e2c79a"    // 톤 변화용(살짝 진한 탄)
+  };
+
+  // liberty의 sources(openmaptiles 벡터)만 받아 우리 미니멀 레이어로 교체한 스타일 JSON을 만든다.
+  // sourcesOverride 를 주면 그걸 쓰고, 없으면 하드코딩 소스로 폴백한다.
+  function buildMinimalStyle(sourcesOverride) {
+    const sources = sourcesOverride || {
+      openmaptiles: { type: "vector", url: OFM_VECTOR_TILES }
+    };
+    const SRC = "openmaptiles";   // OpenFreeMap 벡터 소스 id
+    return {
+      version: 8,
+      name: "fossil-minimal",
+      // glyphs 키는 아예 생략(라벨/심볼 레이어가 없으므로 폰트 불필요 — 네트워크 절감).
+      //  ⚠️ glyphs:null 은 스타일 검증 에러("string expected, null found")로 로드 실패 → 키를 넣지 않는다.
+      sources,
+      layers: [
+        // ① 평평한 파스텔 바닥
+        { id: "background", type: "background", paint: { "background-color": PAL.ground } },
+        // ② landcover — 은은한 그린/베이지 fill (라벨 없음)
+        { id: "lc-grass", type: "fill", source: SRC, "source-layer": "landcover",
+          filter: ["match", ["get","class"], ["grass","meadow"], true, false],
+          paint: { "fill-color": PAL.grass, "fill-opacity": 0.55 } },
+        { id: "lc-wood", type: "fill", source: SRC, "source-layer": "landcover",
+          filter: ["match", ["get","class"], ["wood","forest","scrub"], true, false],
+          paint: { "fill-color": PAL.wood, "fill-opacity": 0.6 } },
+        { id: "lc-sand", type: "fill", source: SRC, "source-layer": "landcover",
+          filter: ["==", ["get","class"], "sand"],
+          paint: { "fill-color": PAL.sand, "fill-opacity": 0.7 } },
+        // ③ park — 부드러운 그린
+        { id: "park-fill", type: "fill", source: SRC, "source-layer": "park",
+          paint: { "fill-color": PAL.park, "fill-opacity": 0.5 } },
+        // ④ water — 플랫 소프트 블루
+        { id: "water", type: "fill", source: SRC, "source-layer": "water",
+          paint: { "fill-color": PAL.water } },
+        { id: "waterway", type: "line", source: SRC, "source-layer": "waterway",
+          paint: { "line-color": PAL.water,
+            "line-width": ["interpolate",["linear"],["zoom"], 12,1, 18,6] } },
+        // ⑤ 도로 = "루트만" 룩. 케이싱(연탄) + 채움(크림). 라벨 없음. class별 폭.
+        //   (아래 넓은 케이싱을 먼저 깔고 그 위에 밝은 채움을 얹어 리본 느낌)
+        //   좁은 길 케이싱
+        { id: "road-minor-case", type: "line", source: SRC, "source-layer": "transportation",
+          filter: ["match", ["get","class"], ["minor","service","street","track","path","pedestrian"], true, false],
+          layout: { "line-cap":"round", "line-join":"round" },
+          paint: { "line-color": PAL.roadCase,
+            "line-width": ["interpolate",["linear"],["zoom"], 13,1.5, 16,4, 19,10] } },
+        //   주요 도로 케이싱
+        { id: "road-major-case", type: "line", source: SRC, "source-layer": "transportation",
+          filter: ["match", ["get","class"], ["motorway","trunk","primary","secondary","tertiary","link"], true, false],
+          layout: { "line-cap":"round", "line-join":"round" },
+          paint: { "line-color": PAL.roadCase,
+            "line-width": ["interpolate",["linear"],["zoom"],
+              10, ["match",["get","class"], "motorway",4, "trunk",3.5, "primary",3, 2],
+              16, ["match",["get","class"], "motorway",14, "trunk",12, "primary",10, "secondary",8, 6],
+              19, ["match",["get","class"], "motorway",26, "trunk",22, "primary",18, "secondary",14, 10] ] } },
+        //   좁은 길 채움
+        { id: "road-minor", type: "line", source: SRC, "source-layer": "transportation",
+          filter: ["match", ["get","class"], ["minor","service","street","track","path","pedestrian"], true, false],
+          layout: { "line-cap":"round", "line-join":"round" },
+          paint: { "line-color": PAL.minorFill,
+            "line-width": ["interpolate",["linear"],["zoom"], 13,0.8, 16,2.6, 19,7] } },
+        //   주요 도로 채움
+        { id: "road-major", type: "line", source: SRC, "source-layer": "transportation",
+          filter: ["match", ["get","class"], ["motorway","trunk","primary","secondary","tertiary","link"], true, false],
+          layout: { "line-cap":"round", "line-join":"round" },
+          paint: { "line-color": PAL.roadFill,
+            "line-width": ["interpolate",["linear"],["zoom"],
+              10, ["match",["get","class"], "motorway",2.6, "trunk",2.2, "primary",1.8, 1.2],
+              16, ["match",["get","class"], "motorway",10, "trunk",8.5, "primary",7, "secondary",5.5, 4],
+              19, ["match",["get","class"], "motorway",20, "trunk",16, "primary",13, "secondary",10, 7] ] } },
+        // ⑥ 로우폴리 건물 (fill-extrusion, 스타일라이즈드 파스텔) — 전세계 footprint 자동
+        { id: "fossil-buildings-3d", type: "fill-extrusion", source: SRC, "source-layer": "building",
+          minzoom: 14,
+          paint: {
+            // 높이: render_height 우선, 없으면 8m 블록. 상한 60m로 클램프(로우폴리 미니멀).
+            "fill-extrusion-height": ["min", 60,
+              ["max", 8, ["coalesce", ["get","render_height"], ["get","height"], 8]] ],
+            "fill-extrusion-base": ["coalesce", ["get","render_min_height"], ["get","min_height"], 0],
+            // 톤 변화: render_height 짝/홀(대략)로 벽 크림↔탄 살짝 다르게 → 아기자기
+            "fill-extrusion-color": ["step",
+              ["%", ["to-number", ["coalesce", ["get","render_height"], 8]], 2],
+              PAL.bldgWall, 1, PAL.bldgAlt ],
+            "fill-extrusion-opacity": 0.95,
+            // flat-face 로우폴리 룩: 수직면 톤 대비를 살짝 (MapLibre vertical-gradient)
+            "fill-extrusion-vertical-gradient": true
+          } }
+        // ★ 그 외(모든 symbol/label: 지명·POI·도로명·transit, housenumber, ne2 raster)는
+        //   레이어를 아예 만들지 않음 = 미니멀. "루트만" 룩.
+      ]
+    };
+  }
 
   // 지역 loot 테이블 (fetch 실패 시 인라인 폴백 사용)
   let REGIONS = null;
@@ -621,11 +729,40 @@
     }
   }
 
-  function initMap() {
+  // liberty 스타일에서 벡터 소스만 꺼내온다(런타임 fetch). 실패하면 null.
+  async function fetchOfmSources() {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 6000);
+      const res = await fetch(LIBERTY_STYLE_URL, { signal: ctrl.signal, cache: "no-cache" });
+      clearTimeout(to);
+      if (!res.ok) return null;
+      const j = await res.json();
+      if (!j || !j.sources) return null;
+      // 벡터 소스만 유지(래스터 ne2_shaded 등 상세 배경 제거).
+      const out = {};
+      for (const [k, v] of Object.entries(j.sources)) {
+        if (v && v.type === "vector") out[k] = v;
+      }
+      return Object.keys(out).length ? out : null;
+    } catch (e) { return null; }
+  }
+
+  // liberty fetch로 얻은 소스로 '초기' 스타일을 만들어 생성자에 넘긴다(setStyle 재로딩 회피 —
+  //  setStyle+vector url(TileJSON)은 헤드리스/오프라인에서 스타일 로드가 지연돼 getStyle().layers가
+  //  비는 문제가 있다). fetch가 없거나 실패하면 하드코딩 소스로 폴백. 어느 경우든 레이어 세트는 동일.
+  async function initMap() {
     if (!window.maplibregl) { console.warn("[map] maplibre 미로딩 — 지도 없이 로직만"); return; }
     const startCenter = [126.9780, 37.5665];  // lng,lat (위치 확정 전 임시)
-    // 오프라인/헤드리스에서도 인스턴스는 뜨도록: 스타일 로드 실패해도 map 객체는 유효.
-    const style = noStyleQP ? emptyStyle() : MAP_STYLE_URL;
+    let style;
+    if (noStyleQP) {
+      style = emptyStyle();
+      window.__ofmSourceMode = "nostyle";
+    } else {
+      const srcs = await fetchOfmSources();     // liberty 소스(6s 타임아웃) or null
+      window.__ofmSourceMode = srcs ? "liberty-fetch" : "fallback";
+      style = buildMinimalStyle(srcs);          // srcs=null이면 하드코딩 소스 폴백
+    }
     try {
       map = new maplibregl.Map({
         container: "map",
@@ -678,36 +815,35 @@
     }, 1500);
   }
 
-  // 완전 빈 스타일(오프라인/헤드리스) — 배경만
+  // 완전 빈 스타일(오프라인/헤드리스) — 파스텔 바닥만 (미니멀 톤 유지)
+  //  glyphs 키는 생략(null이면 검증 에러). 심볼 레이어가 없어 폰트 불필요.
   function emptyStyle() {
     return { version: 8, name: "empty",
-      sources: {}, glyphs: null,
-      layers: [ { id:"bg", type:"background", paint:{ "background-color":"#20304a" } } ] };
+      sources: {},
+      layers: [ { id:"bg", type:"background", paint:{ "background-color":PAL.ground } } ] };
   }
 
-  // 건물 3D 돌출: liberty 스타일엔 'building-3d'(fill-extrusion)가 이미 있음.
-  //  스타일에 없으면(빈/다른 스타일) 스킵. 있으면 최소 줌에서도 보이도록 살짝 조정.
+  // 로우폴리 건물 확인/보강: 미니멀 스타일엔 'fossil-buildings-3d'(스타일라이즈드 fill-extrusion)가
+  //  이미 포함돼 있다. 여기선 (a) 있으면 존재 확인만, (b) 없으면(빈/다른 스타일 + 벡터소스 존재 시)
+  //  우리 파스텔 로우폴리 건물을 추가한다. 회색 liberty 기본색은 절대 쓰지 않는다.
   function ensureBuildings3D() {
     if (!map || !map.getStyle) return;
     try {
-      let has3d = false;
       const layers = map.getStyle().layers || [];
-      for (const l of layers) {
-        if (l.type === "fill-extrusion") { has3d = true;
-          // 낮은 줌에서도 건물이 보이도록 minzoom 완화(과하지 않게)
-          try { if (map.getLayer(l.id)) map.setLayerZoomRange(l.id, 14, 24); } catch(e){}
-        }
-      }
+      const has3d = layers.some(l => l.type === "fill-extrusion");
       if (!has3d && map.getSource("openmaptiles")) {
-        // building fill-extrusion 레이어 직접 추가(스타일에 없을 때만)
         map.addLayer({
           id: "fossil-buildings-3d", type: "fill-extrusion", source: "openmaptiles",
           "source-layer": "building", minzoom: 14,
           paint: {
-            "fill-extrusion-color": "#5a5148",
-            "fill-extrusion-height": ["coalesce", ["get","render_height"], ["get","height"], 8],
-            "fill-extrusion-base": ["coalesce", ["get","render_min_height"], 0],
-            "fill-extrusion-opacity": 0.85
+            "fill-extrusion-height": ["min", 60,
+              ["max", 8, ["coalesce", ["get","render_height"], ["get","height"], 8]] ],
+            "fill-extrusion-base": ["coalesce", ["get","render_min_height"], ["get","min_height"], 0],
+            "fill-extrusion-color": ["step",
+              ["%", ["to-number", ["coalesce", ["get","render_height"], 8]], 2],
+              PAL.bldgWall, 1, PAL.bldgAlt ],
+            "fill-extrusion-opacity": 0.95,
+            "fill-extrusion-vertical-gradient": true
           }
         });
       }
@@ -1028,7 +1164,7 @@
   }
 
   async function boot() {
-    initMap();
+    await initMap();          // liberty 소스 fetch(타임아웃 6s) 후 미니멀 스타일로 맵 생성
     await loadRegions();
     drainPending();   // 이전 세션/단독실행이 남긴 완료 이벤트 흡수(있다면)
     if (MOCK) startMock(); else startRealGPS();
@@ -1052,6 +1188,28 @@
       if (!map || !map.getStyle) return false;
       try { return (map.getStyle().layers||[]).some(l => l.type === "fill-extrusion"); } catch(e){ return false; }
     },
+    // === 미니멀 스타일 검증 훅 ===
+    ofmSourceMode: () => window.__ofmSourceMode || null,   // "liberty-fetch" | "fallback*"
+    styleLayers: () => { try { return (map.getStyle().layers||[]).map(l => ({ id:l.id, type:l.type, sl:l["source-layer"]||null })); } catch(e){ return []; } },
+    styleLayerTypes: () => { try {
+        const t={}; for (const l of (map.getStyle().layers||[])) t[l.type]=(t[l.type]||0)+1; return t;
+      } catch(e){ return {}; } },
+    // 라벨/POI/심볼 레이어 수 (미니멀=0 이어야 함)
+    symbolLayerCount: () => { try { return (map.getStyle().layers||[]).filter(l => l.type==="symbol").length; } catch(e){ return -1; } },
+    // 도로(transportation) 라인 레이어 수 (>0 이어야 "루트만" 룩)
+    roadLineCount: () => { try { return (map.getStyle().layers||[]).filter(l => l.type==="line" && l["source-layer"]==="transportation").length; } catch(e){ return -1; } },
+    // 건물 fill-extrusion 색 (회색 liberty 기본 hsl(35,8%,85%)가 아님을 확인)
+    buildingPaint: () => { try {
+        const l = (map.getStyle().layers||[]).find(x => x.type==="fill-extrusion");
+        if (!l) return null;
+        return { id:l.id, color: map.getPaintProperty(l.id, "fill-extrusion-color") };
+      } catch(e){ return null; } },
+    // 배경(바닥)색
+    backgroundColor: () => { try {
+        const l = (map.getStyle().layers||[]).find(x => x.type==="background");
+        return l ? map.getPaintProperty(l.id, "background-color") : null;
+      } catch(e){ return null; } },
+    palette: () => PAL,
     // 캐릭터 검증
     charLayerAdded: () => !!charState.layerAdded,
     charRendered: () => !!window.__charRendered,
