@@ -208,7 +208,8 @@
   const REGIONS_URL = "../stages/regions.json";
   const DISCOVER_RADIUS_M = 40;    // 이 거리 안이면 "발견" 가능
   const SPOT_COUNT = 5;            // 플레이어 주변 스폰 지점 수
-  const SPOT_MIN_M = 60, SPOT_MAX_M = 320;   // 스폰 반경(미터)
+  // 스폰 반경(미터) — 사용자 2026-07-01 "채굴위치 반경 100m": 모든 지점이 플레이어 100m 이내.
+  const SPOT_MIN_M = 25, SPOT_MAX_M = 100;
   const COOLDOWN_MS = 20000;       // 발굴 후 그 지점 재등장 쿨다운(POC: 제거 후 재스폰)
   const LS_COLLECTION = "fossildig_collection";
   const LS_PENDING = "fossildig_pending";     // 발굴게임이 이중기록하는 큐(L22 폴백)
