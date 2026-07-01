@@ -289,9 +289,19 @@
   const OBJ_LAY_TILT = 0.14;                   // 눕힌 뒤 살짝 기울임(발굴된 듯 자연스럽게)
   const OBJ_BED_PEAK = 0.14;                   // bed 높이(정규화, ×START_DEPTH). 낮게=모델이 주인공
   const OBJ_BASE_Y = OBJ_BED_PEAK * START_DEPTH * HEIGHT_SCALE;   // 모델 밑면이 앉는 bed 표면(월드 Y)
+  // 발굴 대상 매설 위치(월드 XZ). 매 발굴마다 제각각 → 찾는 재미(사용자 2026-07-01).
+  //  footprint(R)가 필드 안에 들어오도록 마진 두고 랜덤. buildObjTop이 갱신, 모델/리셋이 참조.
+  let objCX = 0, objCZ = 0;
+  function randomizeObjPos() {
+    const mx = Math.max(0, WORLD_W / 2 - OBJ_FOOTPRINT_R - 0.6);   // ≈3.8
+    const mz = Math.max(0, WORLD_H / 2 - OBJ_FOOTPRINT_R - 0.6);   // ≈7.1
+    objCX = (Math.random() * 2 - 1) * mx;
+    objCZ = (Math.random() * 2 - 1) * mz;
+  }
   function buildObjTop() {
     objTop.fill(0);
     totalObjCols = 0;
+    randomizeObjPos();                          // 이번 발굴의 매설 위치 결정
     const peak = OBJ_BED_PEAK * START_DEPTH;
     const EDGE = 1.6;                           // 원반 가장자리 소프트 폭(월드)
     for (let r = 0; r < ROWS; r++) {
@@ -299,7 +309,7 @@
         const i = r * COLS + c;
         const x = (c / (COLS - 1) - 0.5) * WORLD_W;
         const z = (r / (ROWS - 1) - 0.5) * WORLD_H;
-        const d = Math.sqrt(x * x + z * z);
+        const d = Math.sqrt((x - objCX) * (x - objCX) + (z - objCZ) * (z - objCZ));
         const m = smooth01((OBJ_FOOTPRINT_R - d) / EDGE);   // 원반 안=1, 가장자리 소프트
         const top = peak * m;
         objTop[i] = top;
@@ -346,7 +356,7 @@
     const cfg = MODEL_CFG[key] || { file: key + ".glb" };
     if (typeof THREE.GLTFLoader === "undefined") return;
     const grp = new THREE.Group();
-    grp.position.set(0, OBJ_BASE_Y, 0);          // 밑면이 bed 표면에 앉음
+    grp.position.set(objCX, OBJ_BASE_Y, objCZ);  // 매설 위치(제각각) + 밑면이 bed 표면에 앉음
     scene.add(grp);
     objGroup = grp;
     new THREE.GLTFLoader().load(MODEL_BASE + cfg.file, function (gltf) {
@@ -1187,7 +1197,7 @@
     fullSync();
     // 발굴 대상 모델 원위치(흙 아래) + 상승/회전 리셋
     objRise = null; objSpin = false;
-    if (objGroup) { objGroup.position.set(0, OBJ_BASE_Y, 0); objGroup.rotation.set(0, 0, 0); }
+    if (objGroup) { objGroup.position.set(objCX, OBJ_BASE_Y, objCZ); objGroup.rotation.set(0, 0, 0); }
     document.getElementById("overlay").className = "";
     setTool(STAGE.tools[0]);
     updateHUD();
