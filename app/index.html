@@ -1034,94 +1034,43 @@
   function buildPropRing(THREE, parent) {
     // --- 공유 머티리얼 (Z-up, 밝은/어두운 면 2톤으로 로우폴리 볼륨감) ---
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: c, roughness: r==null?0.92:r, metalness: 0.0, flatShading: true });
-    const mStone = mat(PROP.stone), mStoneHi = mat(PROP.stoneHi), mStoneDk = mat(PROP.stoneDk),
-          mSand = mat(PROP.sand), mBone = mat(PROP.bone, 0.7), mBoneDk = mat(PROP.boneDk, 0.7),
-          mTerra = mat(PROP.terra), mTerraDk = mat(PROP.terraDk),
-          mStake = mat(PROP.stake, 0.85), mStakeTop = mat(PROP.stakeTop, 0.7),
-          mTent = mat(PROP.tent, 0.95), mTentDk = mat(PROP.tentDk, 0.9);
-    // --- 공유 지오메트리 (로우폴리, 재사용) ---
-    const gCol   = new THREE.CylinderGeometry(0.34, 0.4, 1, 8);      // 유적 기둥 드럼(높이1, 스케일로 조절)
-    const gColBase = new THREE.BoxGeometry(1.0, 1.0, 0.22);          // 기둥 사각 받침돌
-    const gRock  = new THREE.DodecahedronGeometry(0.55, 0);          // 로우폴리 바위
-    const gRockS = new THREE.IcosahedronGeometry(0.34, 0);           // 작은 돌
-    const gRib   = new THREE.TorusGeometry(0.28, 0.05, 5, 8, Math.PI); // 반원 늑골(땅에서 솟은 아치)
-    const gSkull = new THREE.SphereGeometry(0.34, 10, 8);            // 두개골 돔
-    const gEye   = new THREE.SphereGeometry(0.075, 6, 5);           // 두개골 눈구멍(어두운 홈)
-    const gShard = new THREE.CylinderGeometry(0.4, 0.44, 0.09, 12, 1, false, 0, Math.PI*0.8); // 토기 조각(호)
-    const gStake = new THREE.CylinderGeometry(0.05, 0.07, 1.1, 6);   // 측량 말뚝
-    const gStakeTop = new THREE.CylinderGeometry(0.09, 0.09, 0.16, 6);
-    const gTentFloor = new THREE.CircleGeometry(0.9, 16);            // (미사용 폴백)
+    // 바위·풀·나무만 (사용자 2026-07-01). 전부 작게.
+    const mStone = mat(PROP.stone), mStoneHi = mat(PROP.stoneHi), mStoneDk = mat(PROP.stoneDk);
+    const mLeaf = mat(0x8bbf5a), mLeafDk = mat(0x6fa348), mTrunk = mat(0x8a6a44, 0.95),
+          mGrass = mat(0x8fc25a), mGrassDk = mat(0x76ab4a);
+    // --- 공유 지오메트리 (작은 로우폴리, 재사용) ---
+    const gRock  = new THREE.DodecahedronGeometry(0.30, 0);          // 로우폴리 바위
+    const gRockS = new THREE.IcosahedronGeometry(0.17, 0);           // 잔돌
+    const gTrunk = new THREE.CylinderGeometry(0.055, 0.08, 0.42, 6); // 나무 줄기
+    const gLeaf  = new THREE.ConeGeometry(0.26, 0.52, 7);            // 나무 잎(아래단)
+    const gLeaf2 = new THREE.ConeGeometry(0.19, 0.38, 7);           // 나무 잎(윗단)
+    const gBlade = new THREE.ConeGeometry(0.05, 0.28, 4);           // 풀잎
     const props = new THREE.Group();
 
-    // 부서진 유적 기둥(넘어진 드럼 + 서 있는 그루터기 + 받침돌) — 아기자기 폐허
-    function makeColumn() {
+    // 나무: 줄기 + 원뿔 잎 2단 (Z-up, 작게)
+    function makeTree() {
       const g = new THREE.Group();
-      const base = new THREE.Mesh(gColBase, mStoneDk); base.rotation.x = Math.PI/2; base.position.set(0,0,0.11); g.add(base);
-      // 서 있는 그루터기(부러진 기둥 밑동)
-      const stump = new THREE.Mesh(gCol, mStone); stump.rotation.x = Math.PI/2; stump.scale.set(1,1,1.1); stump.position.set(-0.12,0,0.77); g.add(stump);
-      // 위 드럼 한 조각(살짝 어긋나게 얹힘)
-      const drum = new THREE.Mesh(gCol, mStoneHi); drum.rotation.x = Math.PI/2; drum.scale.set(0.94,0.94,0.45); drum.position.set(-0.02,0.05,1.42); g.add(drum);
-      // 넘어져 옆에 굴러떨어진 드럼(눕힌 원통 — Z-up이라 X축으로 눕힘)
-      const fallen = new THREE.Mesh(gCol, mStone); fallen.scale.set(0.9,0.9,0.5); fallen.position.set(0.85,0.2,0.28); g.add(fallen);
-      const fallen2 = new THREE.Mesh(gCol, mStoneDk); fallen2.scale.set(0.9,0.9,0.42); fallen2.position.set(1.35,0.05,0.28); g.add(fallen2);
+      const trunk = new THREE.Mesh(gTrunk, mTrunk); trunk.rotation.x = Math.PI/2; trunk.position.set(0,0,0.21); g.add(trunk);
+      const l1 = new THREE.Mesh(gLeaf,  mLeaf);   l1.rotation.x = Math.PI/2; l1.position.set(0,0,0.62); g.add(l1);
+      const l2 = new THREE.Mesh(gLeaf2, mLeafDk); l2.rotation.x = Math.PI/2; l2.position.set(0,0,0.92); g.add(l2);
       return g;
     }
-    // 돌무더기 (큰 바위 + 잔돌 몇 개)
-    function makeRockPile() {
+    // 바위: 큰 돌 + 잔돌 2개 (작게)
+    function makeRock() {
       const g = new THREE.Group();
-      const r0 = new THREE.Mesh(gRock, mStone); r0.rotation.set(0.3,0.5,0.2); r0.position.set(0,0,0.45); g.add(r0);
-      const r1 = new THREE.Mesh(gRockS, mStoneHi); r1.position.set(0.55,0.1,0.28); r1.rotation.set(0.4,0.2,0); g.add(r1);
-      const r2 = new THREE.Mesh(gRockS, mStoneDk); r2.position.set(-0.35,0.45,0.24); r2.scale.setScalar(0.8); g.add(r2);
-      const r3 = new THREE.Mesh(gRockS, mStone); r3.position.set(0.15,-0.5,0.2); r3.scale.setScalar(0.66); g.add(r3);
+      const r0 = new THREE.Mesh(gRock,  mStone);   r0.rotation.set(0.3,0.5,0.2); r0.position.set(0,0,0.22); g.add(r0);
+      const r1 = new THREE.Mesh(gRockS, mStoneHi); r1.rotation.set(0.4,0.2,0);   r1.position.set(0.28,0.08,0.13); g.add(r1);
+      const r2 = new THREE.Mesh(gRockS, mStoneDk); r2.scale.setScalar(0.8);      r2.position.set(-0.22,0.24,0.11); g.add(r2);
       return g;
     }
-    // 반쯤 묻힌 뼈 (두개골 + 늑골 아치 + 흙둔덕) — 발굴 하이라이트
-    function makeBones() {
+    // 풀 무더기: 얇은 원뿔 블레이드 몇 개 (작게)
+    function makeGrass() {
       const g = new THREE.Group();
-      // 흙둔덕(뼈가 반쯤 묻힌 모래 무더기)
-      const mound = new THREE.Mesh(gSkull, mSand); mound.scale.set(1.7,1.0,0.35); mound.position.set(0.25,0,0.1); g.add(mound);
-      // 두개골(살짝 묻힘 — 아래 절반은 둔덕에) + 눈구멍 2개 + 아래턱
-      const skull = new THREE.Mesh(gSkull, mBone); skull.scale.set(0.95,1.1,0.9); skull.position.set(-0.5,0,0.32); g.add(skull);
-      const jaw = new THREE.Mesh(gSkull, mBoneDk); jaw.scale.set(0.62,0.44,0.34); jaw.position.set(-0.5,0.3,0.16); g.add(jaw);
-      const eyeL = new THREE.Mesh(gEye, mTerraDk); eyeL.position.set(-0.62,0.32,0.36); g.add(eyeL);   // 어두운 눈구멍
-      const eyeR = new THREE.Mesh(gEye, mTerraDk); eyeR.position.set(-0.38,0.32,0.36); g.add(eyeR);
-      // 척추 라인(작은 뼈마디 몇 개) + 늑골 아치 4개(땅에서 솟은 반원, X축을 따라 나란히)
-      for (let i=0;i<4;i++){
-        const x = -0.02 + i*0.3;
-        // 척추 마디
-        const vert = new THREE.Mesh(gEye, mBoneDk); vert.scale.setScalar(1.1); vert.position.set(x,0,0.1); g.add(vert);
-        // 늑골 아치: 반토러스를 세워(평면=XZ) 위로 솟게. 로컬 X를 따라 배열.
-        const rib = new THREE.Mesh(gRib, mBone);
-        rib.rotation.y = Math.PI/2;    // 반원 평면을 YZ로 세움 → 아치가 좌우(Y)로 벌어지며 위로 솟음
-        rib.position.set(x, 0, 0.1); rib.scale.set(1 - i*0.06, 1 - i*0.06, 1 - i*0.06);
-        g.add(rib);
+      const blades = [[0,0,0,mGrass],[0.09,0.05,0.5,mGrassDk],[-0.08,0.03,-0.4,mGrass],[0.03,-0.08,0.9,mGrassDk],[-0.05,-0.06,-0.9,mGrass]];
+      for (const b of blades) {
+        const m = new THREE.Mesh(gBlade, b[3]); m.rotation.x = Math.PI/2; m.rotation.y = b[2];
+        m.position.set(b[0], b[1], 0.14); g.add(m);
       }
-      return g;
-    }
-    // 깨진 토기 조각 (테라코타 파편이 흩어짐)
-    function makePottery() {
-      const g = new THREE.Group();
-      const s0 = new THREE.Mesh(gShard, mTerra); s0.rotation.set(1.1,0.3,0); s0.position.set(0,0,0.1); g.add(s0);
-      const s1 = new THREE.Mesh(gShard, mTerraDk); s1.rotation.set(0.9,-0.6,0.4); s1.scale.setScalar(0.7); s1.position.set(0.5,0.2,0.08); g.add(s1);
-      const s2 = new THREE.Mesh(gShard, mTerra); s2.rotation.set(1.3,1.2,0.2); s2.scale.setScalar(0.55); s2.position.set(-0.3,0.45,0.06); g.add(s2);
-      return g;
-    }
-    // 발굴 말뚝(측량 스테이크) + 붉은 머리
-    function makeStake() {
-      const g = new THREE.Group();
-      const post = new THREE.Mesh(gStake, mStake); post.rotation.x = Math.PI/2; post.position.set(0,0,0.55); post.rotation.z = 0.06; g.add(post);
-      const top = new THREE.Mesh(gStakeTop, mStakeTop); top.rotation.x = Math.PI/2; top.position.set(0,0,1.12); g.add(top);
-      return g;
-    }
-    // 작은 발굴 텐트(A형 캔버스 + 폴)
-    function makeTent() {
-      const g = new THREE.Group();
-      // 캔버스: 삼각기둥 느낌 → 원뿔 4각 (ConeGeometry radialSegments 4)
-      const canvas = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.0, 4), mTent);
-      canvas.rotation.x = -Math.PI/2; canvas.rotation.z = Math.PI/4; canvas.position.set(0,0,0.5); g.add(canvas);
-      // 입구 어두운 삼각(플랩)
-      const flap = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.55, 3), mTentDk);
-      flap.rotation.x = -Math.PI/2; flap.position.set(0, 0.72, 0.28); g.add(flap);
       return g;
     }
 
@@ -1129,13 +1078,11 @@
     let seed = 20260701;
     const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
     // 프롭 배치표: 종류별 개수(총 ≈15). factory + 개수 + 크기범위.
+    // 바위·풀·나무만, 훨씬 작게(scale ~0.3~0.55).
     const plan = [
-      { make: makeColumn,   n: 2, sMin: 0.9,  sMax: 1.3,  rMin: 6, rMax: 12 },
-      { make: makeRockPile, n: 4, sMin: 0.8,  sMax: 1.4,  rMin: 4, rMax: 12 },
-      { make: makeBones,    n: 3, sMin: 0.85, sMax: 1.2,  rMin: 5, rMax: 11 },
-      { make: makePottery,  n: 3, sMin: 0.8,  sMax: 1.15, rMin: 4, rMax: 10 },
-      { make: makeStake,    n: 2, sMin: 0.9,  sMax: 1.15, rMin: 4, rMax: 9  },
-      { make: makeTent,     n: 1, sMin: 1.1,  sMax: 1.4,  rMin: 7, rMax: 11 }
+      { make: makeTree,  n: 6,  sMin: 0.34, sMax: 0.55, rMin: 4, rMax: 14 },
+      { make: makeRock,  n: 6,  sMin: 0.32, sMax: 0.55, rMin: 3, rMax: 14 },
+      { make: makeGrass, n: 12, sMin: 0.30, sMax: 0.50, rMin: 3, rMax: 14 }
     ];
     for (const it of plan) {
       for (let i = 0; i < it.n; i++) {
