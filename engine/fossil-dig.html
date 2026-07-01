@@ -164,8 +164,8 @@
       // 층 경계(오브젝트 표면 위 남은 흙 = soilAbove, ×startDepth 정규화).
       //  fineTop < midTop < (오브젝트 위 최소 겉흙 ≈0.82). 깊은 흙에서 삽→끌→붓이
       //  자연스럽게 순서대로 필요하도록 튜닝. (fineTop 0.14, midTop 0.45)
-      fineTop: 0.14,
-      midTop: 0.45
+      fineTop: 0.30,
+      midTop: 0.50
     },
     tools: ["shovel", "chisel", "brush"],
     clear: { revealFrac: 1.0 }
@@ -187,6 +187,10 @@
   const MID_TOP  = STAGE.soil.midTop  * STAGE.soil.startDepth;   // ≈0.608
   // 해당 도구가 어느 층까지 파는지(층 하단 경계). 도구가 이 값 아래로는 못 내려감.
   const LAYER_FLOOR = { bulk: MID_TOP, mid: FINE_TOP, fine: 0 };
+  // GRACE(hysteresis): 도구가 자기 밴드 + 위 밴드의 GRACE 슬라이스까지 처리 → 경계 근처 작은 잔여
+  //  때문에 끌↔붓을 왔다갔다 하는 불편 제거(사용자 2026-07-01). 붓은 (FINE_TOP+GRACE) 이하를 objTop까지
+  //  쭉 마무리 → 한 번 붓 잡으면 그 구역 끝. 여전히 두꺼운 겉흙(초기 soilAbove≥~0.82)엔 안 먹힘.
+  const LAYER_GRACE = STAGE.soil.startDepth * 0.10;   // ≈0.135
 
   // 잘못된 도구 안내 문구 (soilAbove 밴드 → 올바른 도구)
   const LAYER_HINT = {
@@ -202,6 +206,14 @@
     if (soilAbove > MID_TOP + BAND_EPS) return "bulk";
     if (soilAbove > FINE_TOP + BAND_EPS) return "mid";
     return "fine";
+  }
+  // 이 도구가 이 깊이(soilAbove)를 팔 수 있는가 — 자기 밴드 + 위 밴드로 GRACE만큼 여유(hysteresis).
+  //  삽=위쪽(경계 없음), 끌=FINE_TOP 위 ~ MID_TOP+GRACE, 붓=FINE_TOP+GRACE 이하. 겹침(overlap)이
+  //  전환 빈도를 낮춘다(경계 근처는 두 도구 다 가능). floor(LAYER_FLOOR)에서 멈추는 건 그대로.
+  function canDig(layer, soilAbove) {
+    if (layer === "bulk") return soilAbove > MID_TOP + BAND_EPS;
+    if (layer === "mid")  return soilAbove > FINE_TOP + BAND_EPS && soilAbove <= MID_TOP + LAYER_GRACE;
+    return soilAbove <= FINE_TOP + LAYER_GRACE;   // fine(붓)
   }
 
   // 튜닝 상수
@@ -720,8 +732,7 @@
         if (isObj[i]) {
           // ── 오브젝트 셀: 레이어 게이트 ──
           const soilAbove = soilTop[i] - objTop[i];
-          const cellLayer = layerAt(soilAbove);
-          if (cellLayer !== layer) continue; // 잘못된 층 → 이 도구는 여기 못 팜(no-op)
+          if (!canDig(layer, soilAbove)) continue;   // 담당 밴드(+GRACE) 밖 → no-op
           minSoil = objTop[i] + floor;       // 층 하단 경계에서 멈춤(붓 floor=0 → objTop)
         } else {
           // ── 비-오브젝트 흙: 게이트 없이 바닥(0)까지 ──
@@ -750,8 +761,7 @@
       const ci = gr * COLS + gc;
       if (isObj[ci]) {
         const soilAbove = soilTop[ci] - objTop[ci];
-        const cl = layerAt(soilAbove);
-        if (cl !== layer && soilAbove > TOL) wrongLayer = cl;
+        if (!canDig(layer, soilAbove) && soilAbove > TOL) wrongLayer = layerAt(soilAbove);
       }
     }
     return { change: anyChange, revealed: revealedHere, wrongLayer: wrongLayer };
