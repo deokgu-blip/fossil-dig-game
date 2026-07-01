@@ -25,7 +25,18 @@
   .bar-track { height:9px; border-radius:6px; background:rgba(0,0,0,0.35); overflow:hidden; }
   .bar-fill { height:100%; width:0%; border-radius:6px; transition:width .12s linear; }
   #reveal-fill { background:linear-gradient(90deg,#c9b584,#f0dfae); }
-  #broken-fill { background:linear-gradient(90deg,#8a4130,#d8543a); }
+
+  /* ===== 잘못된 도구 힌트 토스트 ===== */
+  #hint {
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 96px);
+    transform:translateX(-50%) translateY(8px);
+    z-index:20; pointer-events:none;
+    background:rgba(24,17,9,0.82); color:#f3e6cf; border:1px solid rgba(240,198,116,0.28);
+    border-radius:12px; padding:8px 14px; font-size:13px; font-weight:600; letter-spacing:.2px;
+    white-space:nowrap; opacity:0; transition:opacity .18s, transform .18s;
+    backdrop-filter:blur(4px); box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  #hint.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* ===== Tool bar ===== */
   #toolbar {
@@ -76,12 +87,10 @@
     <div class="bar-label"><span>발굴률</span><span class="val" id="reveal-val">0%</span></div>
     <div class="bar-track"><div class="bar-fill" id="reveal-fill"></div></div>
   </div>
-  <div class="bar-wrap">
-    <div class="bar-label"><span>손상</span><span class="val" id="broken-val">0%</span></div>
-    <div class="bar-track"><div class="bar-fill" id="broken-fill"></div></div>
-  </div>
 </div>
 <div id="brand">FOSSIL DIG</div>
+
+<div id="hint"></div>
 
 <div id="toolbar"></div>
 
@@ -139,39 +148,65 @@
   // ============================================================
   // STAGE DATA (POC 인라인 — 나중에 stages/*.json fetch로 교체)
   // ============================================================
+  //  ── 레이어-재료(layer-material) 모델 (2026-07-01, 손상 기믹 제거 후 재설계) ──
+  //  오브젝트 위에는 흙이 3개 층으로 나뉜다(soilAbove = soilTop - objTop 기준).
+  //   BULK(진갈색 겉흙)  : 삽만 판다 → MID 경계에서 멈춤.
+  //   MID (회갈색 단단층) : 끌만 판다 → FINE 경계에서 멈춤.
+  //   FINE(밝은 고운모래) : 붓만 판다 → objTop(깨끗 노출)까지.
+  //  각 도구는 자기 층만 제거하고 층 하단 경계에서 클램프 → 잘못된 순서면 no-op.
+  //  오브젝트는 절대 손상 안 됨(파고들기 자체가 불가). 강제 순서: 삽→끌→붓.
   const STAGE = {
     level: 1,
     grid: { cols: 72, rows: 96 },
     object: { type: "dino_skull", placement: { x: 0.5, y: 0.5, scale: 0.8 }, tilt: 0.26 },
-    soil: { startDepth: 1.35 },
+    soil: {
+      startDepth: 1.35,
+      // 층 경계(오브젝트 표면 위 남은 흙 = soilAbove, ×startDepth 정규화).
+      //  fineTop < midTop < (오브젝트 위 최소 겉흙 ≈0.82). 깊은 흙에서 삽→끌→붓이
+      //  자연스럽게 순서대로 필요하도록 튜닝. (fineTop 0.14, midTop 0.45)
+      fineTop: 0.14,
+      midTop: 0.45
+    },
     tools: ["shovel", "chisel", "brush"],
-    fail: { maxBrokenFrac: 0.08 },
     clear: { revealFrac: 1.0 }
   };
 
-  // 도구 기본값 (데이터 우선; 지시 시작점)
-  //  도구별 깊이 역할 (soilAbove = 오브젝트 위 남은 흙):
-  //   삽    : 강함(dp0.20,r6) — 두꺼운 겉흙 대량. objTop 근처선 큰 depth라 과굴착 파손 → bulk 전용.
-  //   끌    : 중간(dp0.075,r3) — 삽보다 느리지만 더 가까이 안전. 중간층 담당.
-  //   붓    : safe. 두꺼운 흙엔 거의 안 먹힘(brushEff=soilAbove로 감쇠). objTop clamp 무손상, 마무리 전용.
+  // 도구 기본값 — 레이어-재료: 각 도구는 담당 층만 제거(layer 지정), 층 하단서 멈춤.
+  //  삽    : BULK 담당(대반경·큰깊이). soilAbove가 midTop 이하로 내려가면 멈춤(끌 차례).
+  //  끌    : MID 담당(중반경). soilAbove가 fineTop 이하로 내려가면 멈춤(붓 차례).
+  //  붓    : FINE 담당(마무리). objTop(0)까지 걷어냄. 두꺼운 층엔 no-op.
+  //  layer=자기가 파는 층 id. 오브젝트 셀에서만 게이트 적용(비-오브젝트 흙은 아무 도구나 바닥까지).
   const TOOL_DEFS = {
-    shovel: { name: "삽",  ico: "🪏", radius: 6, depthPerStroke: 0.20,  safe: false, haptic: 24, sfx: "shovel" },
-    chisel: { name: "끌",  ico: "🔨", radius: 3, depthPerStroke: 0.075, safe: false, haptic: 16, sfx: "chisel" },
-    brush:  { name: "붓",  ico: "🖌️", radius: 5, depthPerStroke: 0.05,  safe: true,  haptic: 8,  sfx: "brush" }
+    shovel: { name: "삽",  ico: "🪏", radius: 6, depthPerStroke: 0.20,  layer: "bulk", haptic: 24, sfx: "shovel" },
+    chisel: { name: "끌",  ico: "🔨", radius: 3, depthPerStroke: 0.075, layer: "mid",  haptic: 16, sfx: "chisel" },
+    brush:  { name: "붓",  ico: "🖌️", radius: 5, depthPerStroke: 0.05,  layer: "fine", haptic: 8,  sfx: "brush" }
   };
 
-  // 붓 유효성: soilAbove(오브젝트 위 남은 흙)가 얇을 때만 제대로 걷힘.
-  //   soilAbove >= BRUSH_MAX → 제거량 0 (두꺼운 흙에 붓 무용, 처음부터 붓질 불가가 목표)
-  //   soilAbove <= BRUSH_FULL → 풀파워(얇은 마무리층)
-  const BRUSH_MAX  = 0.34;
-  const BRUSH_FULL = 0.12;
+  // 층 경계 (절대값 = 데이터 × startDepth). fullSync/게이트/틴트가 공용으로 참조.
+  const FINE_TOP = STAGE.soil.fineTop * STAGE.soil.startDepth;   // ≈0.189
+  const MID_TOP  = STAGE.soil.midTop  * STAGE.soil.startDepth;   // ≈0.608
+  // 해당 도구가 어느 층까지 파는지(층 하단 경계). 도구가 이 값 아래로는 못 내려감.
+  const LAYER_FLOOR = { bulk: MID_TOP, mid: FINE_TOP, fine: 0 };
+
+  // 잘못된 도구 안내 문구 (soilAbove 밴드 → 올바른 도구)
+  const LAYER_HINT = {
+    bulk: "겉흙이 두꺼워요 — 삽으로 파세요",
+    mid:  "단단한 흙이에요 — 끌로 떼어내세요",
+    fine: "고운 모래층 — 붓으로 쓸어내세요"
+  };
+  //  BAND_EPS: 앞 도구가 자기 floor(경계)에 정확히 클램프해 멈추면 soilAbove가 경계값에
+  //  딱 앉는다. 이때 부동소수 오차로 경계 바로 위(=앞 도구 밴드)에 남아 다음 도구가 못 이어받는
+  //  교착을 막기 위해, 경계에서 EPS 이내면 아래(=다음 도구) 밴드로 넘긴다. (경계 = 다음 도구 담당)
+  const BAND_EPS = 1e-3;
+  function layerAt(soilAbove) {
+    if (soilAbove > MID_TOP + BAND_EPS) return "bulk";
+    if (soilAbove > FINE_TOP + BAND_EPS) return "mid";
+    return "fine";
+  }
 
   // 튜닝 상수
-  //  reveal 판정: objTop-BROKEN_TOL <= soilTop <= objTop+TOL 이면 "노출됨"
-  //  안전대(safe band) = TOL + BROKEN_TOL. 끌(0.075 depth)이 이 대역 안에
-  //  안착할 수 있을 만큼 넓게 잡아 "가까이서 조심히" 발굴이 가능하게 함.
-  const TOL = 0.055;         // reveal 허용오차 (objTop 위쪽 여유) — 끌 dp에 맞춰 살짝 넓힘
-  const BROKEN_TOL = 0.05;   // soilTop이 objTop보다 이만큼 아래로 가면 broken
+  //  reveal 판정: soilTop <= objTop + TOL 이면 "노출됨" (손상 개념 없음 → 아래쪽 여유 무제한).
+  const TOL = 0.02;          // reveal 허용오차 (붓이 objTop까지 클램프하므로 좁아도 됨)
   const OBJ_MIN = 0.05;      // objTop이 이 값보다 크면 "오브젝트 열"로 간주
 
   // ============================================================
@@ -366,7 +401,7 @@
     geo.rotateX(-Math.PI / 2);   // XZ 평면
     posAttr = geo.attributes.position;
 
-    // 발굴상태를 per-vertex color 어트리뷰트로 전달 (r=reveal, g=broken).
+    // 발굴상태를 per-vertex color 어트리뷰트로 전달 (r=reveal, g=layer 톤).
     //  (color는 가장 널리 지원되는 정점 채널 — 원본 코드에서 정상 동작 확인.)
     const nVerts = posAttr.count;
     revealAttr = new THREE.BufferAttribute(new Float32Array(nVerts * 3), 3);
@@ -431,7 +466,7 @@
       lights: false,
       vertexShader: `
         varying float vReveal;
-        varying float vBroken;
+        varying float vLayer;
         varying float vHeight;
         varying vec2 vWorldUV;
         varying vec3 vNormal;
@@ -440,9 +475,9 @@
         uniform float uAspect;
         uniform float uHeightScale;
         void main() {
-          // color.r=reveal, color.g=broken (three가 'color' 어트리뷰트를 자동 주입)
+          // color.r=reveal(0..1), color.g=layer(0=bulk .. 0.5=mid .. 1=fine) — 표면 층 톤 구분용.
           vReveal = color.r;
-          vBroken = color.g;
+          vLayer = color.g;
           vNormal = normalize(normalMatrix * normal);
           vWorldUV = vec2(position.x, position.z);
           vHeight = position.y / uHeightScale;
@@ -463,7 +498,7 @@
         uniform float fogNear;
         uniform float fogFar;
         varying float vReveal;
-        varying float vBroken;
+        varying float vLayer;
         varying float vHeight;
         varying vec2 vWorldUV;
         varying vec3 vNormal;
@@ -486,6 +521,19 @@
           // 뼈에 살짝 따뜻한 아이보리 톤 (푸른기 제거)
           bone *= vec3(1.02, 0.98, 0.90);
 
+          // --- 층 톤(layer tint): 현재 표면이 속한 층에 따라 흙 색을 살짝 바꿔 "여긴 무슨 도구" 가독 ---
+          //  vLayer: 0=BULK(진갈색, 무보정) · 0.5=MID(회갈 단단층) · 1=FINE(밝은 고운 모래).
+          //  오브젝트 위에서만 층이 갈리므로(비-오브젝트는 항상 0=bulk) 오브젝트 위 표면에 밴드가 보임.
+          float lyr = clamp(vLayer, 0.0, 1.0);
+          // MID: 채도 낮추고 회색기 + 살짝 청회색 (단단한 암반층). FINE: 밝고 따뜻한 고운 모래빛.
+          float g = dot(soil, vec3(0.34, 0.5, 0.16));
+          vec3 midTint  = mix(soil, vec3(g * 0.92, g * 0.94, g * 0.98), 0.60);   // 탈채도+살짝 차갑게
+          vec3 fineTint = soil * vec3(1.85, 1.66, 1.22) + vec3(0.16, 0.135, 0.07);// 밝은 모래빛(확실히 대비)
+          //  0→0.5 : bulk→mid,  0.5→1 : mid→fine (경계 또렷하게 좁은 전이대)
+          vec3 layered = mix(soil, midTint, smoothstep(0.30, 0.55, lyr));
+          layered = mix(layered, fineTint, smoothstep(0.72, 0.98, lyr));
+          soil = layered;
+
           float rev = clamp(vReveal, 0.0, 1.0);
           // 흙→뼈 전이는 살짝 샤프하게 (걷히는 경계가 또렷)
           float mixT = smoothstep(0.15, 0.82, rev);
@@ -494,11 +542,6 @@
           // 파낸 흙 벽(깊이) 그늘: reveal 낮고 파인 곳일수록 어둡게 (깊이 판 느낌)
           float pitShade = mix(1.0, 0.55, (1.0 - rev) * clamp((uStartDepth - vHeight) / uStartDepth, 0.0, 1.0));
           albedo *= pitShade;
-
-          // broken: 어두운 금간 톤 오버레이
-          float brk = clamp(vBroken, 0.0, 1.0);
-          vec3 brokenCol = albedo * 0.30 + vec3(0.09, 0.03, 0.02);
-          albedo = mix(albedo, brokenCol, brk);
 
           // --- 라이팅: 정점 노멀 diffuse + 앰비언트 + 경사 음영(릴리프 강조) ---
           vec3 n = normalize(vNormal);
@@ -586,7 +629,7 @@
     return (s > o ? s : o) * HEIGHT_SCALE;   // max(soil,obj)
   }
 
-  // per-vertex reveal(0..1) + broken(0..1) 계산 → 셰이더가 텍스처 mix
+  // per-vertex reveal(0..1) + layer(0..1) 계산 → 셰이더가 텍스처 mix + 층 tint
   //  reveal은 흙을 표면 가까이 팠을 때만 오른다(안 판 흙은 완전히 뼈를 가림).
   //  BAND는 objTop 최고점의 초기 덮임(=START_DEPTH-objMaxTop)보다 작아야
   //  0%에서 뼈가 안 비친다. (TOP_FRAC=0.66 → 최고점 초기덮임 ~0.34)
@@ -599,18 +642,23 @@
     // cover<=0 → reveal 1, cover>=BAND → reveal 0
     return 1 - Math.min(1, Math.max(0, cover / REVEAL_BAND));
   }
-  function brokenFor(i) {
+  // 표면 층 값 → color.g (0=bulk, 0.5=mid, 1=fine). 오브젝트 위에서만 층이 갈림.
+  //  비-오브젝트 흙은 항상 0(진갈색 겉흙). soilAbove로 판정.
+  function layerFor(i) {
     if (!isObj[i]) return 0;
-    return soilTop[i] < objTop[i] - BROKEN_TOL ? 1 : 0;
+    const soilAbove = soilTop[i] - objTop[i];
+    if (soilAbove > MID_TOP) return 0.0;     // bulk
+    if (soilAbove > FINE_TOP) return 0.5;    // mid
+    return 1.0;                              // fine (오브젝트 바로 위 고운 모래)
   }
 
-  // 전체 초기 반영 (reveal→color.r, broken→color.g, 높이→posAttr Y)
+  // 전체 초기 반영 (reveal→color.r, layer→color.g, 높이→posAttr Y)
   function fullSync() {
     const p = posAttr.array, rc = revealAttr.array;
     for (let i = 0; i < N; i++) {
       p[i * 3 + 1] = renderY(i);
       rc[i * 3] = revealFor(i);
-      rc[i * 3 + 1] = brokenFor(i);
+      rc[i * 3 + 1] = layerFor(i);
     }
     posAttr.needsUpdate = true;
     revealAttr.needsUpdate = true;
@@ -624,7 +672,7 @@
       const i = cells[k];
       p[i * 3 + 1] = renderY(i);
       rc[i * 3] = revealFor(i);
-      rc[i * 3 + 1] = brokenFor(i);
+      rc[i * 3 + 1] = layerFor(i);
     }
     posAttr.needsUpdate = true;
     revealAttr.needsUpdate = true;
@@ -638,14 +686,20 @@
   let curTool = "shovel";
   const toolDef = () => TOOL_DEFS[curTool];
 
-  // 격자 셀 (gc,gr)에 현재 도구로 1회 발굴. broke 여부 리턴.
+  // 격자 셀 (gc,gr)에 현재 도구로 1회 발굴 (레이어-재료 게이트).
+  //  각 도구는 자기 층(td.layer)만 제거하고 층 하단 경계(LAYER_FLOOR)에서 멈춘다.
+  //  잘못된 층(오브젝트 위)에 쓰면 그 셀은 no-op → 강제 순서 삽→끌→붓.
+  //  비-오브젝트 흙(isObj=false, 주변 피트)은 게이트 없이 어떤 도구나 바닥(0)까지 판다.
+  //  wrongLayer: 클릭 중심 셀 기준 "이 도구로 안 파이는 층"이면 힌트용으로 그 층 id 반환.
   const _dirtyCells = [];
   function digCell(gc, gr, dirMode) {
     const td = toolDef();
     const R = td.radius;
     const dp = td.depthPerStroke;
+    const layer = td.layer;                  // "bulk" | "mid" | "fine"
+    const floor = LAYER_FLOOR[layer];        // 이 도구가 오브젝트 위에서 도달하는 최소 soilAbove
     _dirtyCells.length = 0;
-    let anyChange = false, brokeHere = false, revealedHere = false;
+    let anyChange = false, revealedHere = false;
     const R2 = R * R;
     for (let dr = -R; dr <= R; dr++) {
       const rr = gr + dr;
@@ -661,42 +715,46 @@
         let fall = 1 - dist / (R + 0.5);
         if (fall <= 0) continue;
         fall = fall * fall * (3 - 2 * fall); // smoothstep
-        let remove = dp * fall;
-        // 붓(safe): 오브젝트 위 남은 흙(soilAbove)이 두꺼우면 거의 안 먹힘 → 마무리 전용.
-        //   soilAbove>=BRUSH_MAX → eff 0, <=BRUSH_FULL → eff 1. 오브젝트 없는 열도 동일 감쇠
-        //   (붓은 어차피 겉흙 대량 제거가 불가한 마무리 도구 → 두꺼운 흙 지점에선 무용).
-        if (td.safe) {
-          const ref = isObj[i] ? objTop[i] : 0;
-          const soilAbove = soilTop[i] - ref;              // 오브젝트/바닥 위 남은 흙
-          let eff = 1 - (soilAbove - BRUSH_FULL) / (BRUSH_MAX - BRUSH_FULL);
-          eff = eff <= 0 ? 0 : (eff >= 1 ? 1 : eff * eff * (3 - 2 * eff)); // smoothstep
-          remove *= eff;
+
+        let minSoil;                         // 이 셀에서 이 도구가 내려갈 수 있는 최소 흙표면
+        if (isObj[i]) {
+          // ── 오브젝트 셀: 레이어 게이트 ──
+          const soilAbove = soilTop[i] - objTop[i];
+          const cellLayer = layerAt(soilAbove);
+          if (cellLayer !== layer) continue; // 잘못된 층 → 이 도구는 여기 못 팜(no-op)
+          minSoil = objTop[i] + floor;       // 층 하단 경계에서 멈춤(붓 floor=0 → objTop)
+        } else {
+          // ── 비-오브젝트 흙: 게이트 없이 바닥(0)까지 ──
+          minSoil = 0;
         }
-        let ns = soilTop[i] - remove;
-        if (ns < 0) ns = 0;
-        const wasBroken = isObj[i] && soilTop[i] < objTop[i] - BROKEN_TOL;
-        if (td.safe && isObj[i]) {
-          // 붓: objTop 아래로 못 내림 (clamp) — 절대 손상 없음
-          if (ns < objTop[i]) ns = objTop[i];
-        }
+
+        let ns = soilTop[i] - dp * fall;
+        if (ns < minSoil) ns = minSoil;      // 층 하단(또는 바닥) 클램프 — 절대 넘어가지 않음
         if (ns < soilTop[i] - 1e-6) {
           soilTop[i] = ns;
           anyChange = true;
           _dirtyCells.push(i);
-          if (isObj[i]) {
-            if (soilTop[i] < objTop[i] - BROKEN_TOL && !wasBroken) brokeHere = true;
-            if (Math.abs(soilTop[i] - objTop[i]) <= TOL) revealedHere = true;
-          }
+          if (isObj[i] && Math.abs(soilTop[i] - objTop[i]) <= TOL) revealedHere = true;
         }
       }
     }
     if (anyChange) {
       syncCells(_dirtyCells);
-      // 파티클/연출
+      // 파티클/연출 (파손 없음)
       const wy = renderY(gr * COLS + gc);
-      spawnEffect(gc, gr, wy, td, dirMode, brokeHere);
+      spawnEffect(gc, gr, wy, td, dirMode);
     }
-    return { change: anyChange, broke: brokeHere, revealed: revealedHere };
+    // 아무것도 안 파였으면(no-op) 중심 셀이 오브젝트 위 다른 층인지 확인 → 힌트용
+    let wrongLayer = null;
+    if (!anyChange) {
+      const ci = gr * COLS + gc;
+      if (isObj[ci]) {
+        const soilAbove = soilTop[ci] - objTop[ci];
+        const cl = layerAt(soilAbove);
+        if (cl !== layer && soilAbove > TOL) wrongLayer = cl;
+      }
+    }
+    return { change: anyChange, revealed: revealedHere, wrongLayer: wrongLayer };
   }
 
   // 정규화(0..1) → 격자 (gc,gr)
@@ -718,34 +776,40 @@
   // ============================================================
   // 진행률 / 상태
   // ============================================================
-  let cleared = false, failed = false;
+  let cleared = false;
   function computeState() {
-    let revealed = 0, broken = 0;
+    let revealed = 0;
     for (let i = 0; i < N; i++) {
       if (!isObj[i]) continue;
-      if (soilTop[i] < objTop[i] - BROKEN_TOL) broken++;
-      else if (soilTop[i] <= objTop[i] + TOL) revealed++;
+      if (soilTop[i] <= objTop[i] + TOL) revealed++;   // 손상 개념 없음 → 노출 여부만
     }
     const revealFrac = totalObjCols ? revealed / totalObjCols : 0;
-    const brokenFrac = totalObjCols ? broken / totalObjCols : 0;
-    return { revealed, broken, revealFrac, brokenFrac };
+    return { revealed, revealFrac };
   }
 
   function updateHUD() {
     const st = computeState();
     document.getElementById("reveal-fill").style.width = (st.revealFrac * 100).toFixed(1) + "%";
     document.getElementById("reveal-val").textContent = Math.round(st.revealFrac * 100) + "%";
-    document.getElementById("broken-fill").style.width = (st.brokenFrac * 100).toFixed(1) + "%";
-    document.getElementById("broken-val").textContent = Math.round(st.brokenFrac * 100) + "%";
 
-    if (!cleared && !failed) {
-      if (st.brokenFrac > STAGE.fail.maxBrokenFrac) {
-        failed = true; showOverlay(false);
-      } else if (st.revealFrac >= STAGE.clear.revealFrac - 1e-6) {
-        cleared = true; finishClear();
-      }
+    if (!cleared && st.revealFrac >= STAGE.clear.revealFrac - 1e-6) {
+      cleared = true; finishClear();
     }
     return st;
+  }
+
+  // 잘못된 도구 힌트 토스트 (은은하게, 스로틀). 실패 아님.
+  let _hintTimer = null, _hintCooldown = 0;
+  function showHint(layer) {
+    if (_hintCooldown > 0) return;
+    _hintCooldown = 1.1;
+    const el = document.getElementById("hint");
+    el.textContent = LAYER_HINT[layer] || "다른 도구가 필요해요";
+    el.classList.add("show");
+    if (_hintTimer) clearTimeout(_hintTimer);
+    _hintTimer = setTimeout(function () { el.classList.remove("show"); }, 900);
+    // 아주 가벼운 무효 진동 (틱)
+    if (navigator.vibrate) { try { navigator.vibrate(6); } catch (e) {} }
   }
 
   // 100% 도달 시: 남은 흙 필름(TOL 이내지만 아직 덮인)을 완전히 걷어 오브젝트를 깨끗이 노출 →
@@ -756,20 +820,21 @@
     triggerWinShine();   // 발굴 완료 반짝
     document.getElementById("reveal-fill").style.width = "100%";
     document.getElementById("reveal-val").textContent = "100%";
-    setTimeout(function(){ showOverlay(true); }, 820);   // "발견!" 비트 후 마무리
+    setTimeout(function(){ showOverlay(); }, 820);   // "발견!" 비트 후 마무리
   }
 
-  function showOverlay(win) {
+  // 클리어 전용 오버레이 (fail 없음 — 손상/실패 기믹 제거).
+  function showOverlay() {
     const ov = document.getElementById("overlay");
-    ov.className = "show " + (win ? "win" : "lose");
-    document.getElementById("ov-title").textContent = win ? "CLEAR!" : "FAILED";
-    let sub = win ? "완벽하게 발굴했어요!" : "너무 많이 손상됐어요";
+    ov.className = "show win";
+    document.getElementById("ov-title").textContent = "CLEAR!";
+    let sub = "완벽하게 발굴했어요!";
     // 인카운터(지도 셸에서 진입)면 발견물 이름을 자막에 표시
-    if (win && ENCOUNTER.active && ENCOUNTER.name) sub = ENCOUNTER.name + " 발굴 성공!";
+    if (ENCOUNTER.active && ENCOUNTER.name) sub = ENCOUNTER.name + " 발굴 성공!";
     document.getElementById("ov-sub").textContent = sub;
-    playSfx(win ? "clear" : "break");
-    if (navigator.vibrate) { try { navigator.vibrate(win ? [30, 40, 60] : [80, 30, 80]); } catch (e) {} }
-    if (win) notifyComplete();   // 부모 셸/도감으로 발견 통지 (단독이면 localStorage에만)
+    playSfx("clear");
+    if (navigator.vibrate) { try { navigator.vibrate([30, 40, 60]); } catch (e) {} }
+    notifyComplete();   // 부모 셸/도감으로 발견 통지 (단독이면 localStorage에만)
   }
 
   // ============================================================
@@ -836,7 +901,7 @@
   const _mtx = new THREE.Matrix4(), _q = new THREE.Quaternion(), _pos = new THREE.Vector3(), _scl = new THREE.Vector3();
   const _euler = new THREE.Euler();
 
-  function spawnEffect(gc, gr, wy, td, dirMode, broke) {
+  function spawnEffect(gc, gr, wy, td, dirMode) {
     // FLYING PARTICLES REMOVED (사용자 2026-07-01: 먼지·모래·흙덩이 파편 모두 위에서 보면 이상함).
     // 발굴 피드백 = 지형(하이트맵)이 실제로 파여 사라지는 것 + 사운드 + 햅틱 만으로 (더 사실적).
     // 복원 시: 삽/끌=chunkPool, 붓=sandPool, 먼지=dustPool 스폰 블록을 되살리면 됨.
@@ -960,16 +1025,16 @@
   }
 
   function doDig(gc, gr, dirMode) {
-    if (cleared || failed) return;
+    if (cleared) return;
     const res = digCell(gc, gr, dirMode);
     if (res.change) {
       const td = toolDef();
       if (sfxCooldown <= 0) { playSfx(td.sfx); sfxCooldown = 0.09; }
-      if (res.broke) {
-        if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
-        playSfx("break");
-      } else if (navigator.vibrate) { try { navigator.vibrate(td.haptic); } catch (e) {} }
+      if (navigator.vibrate) { try { navigator.vibrate(td.haptic); } catch (e) {} }
       updateHUD();
+    } else if (res.wrongLayer) {
+      // 잘못된 층에 잘못된 도구 → 은은한 힌트(실패 아님)
+      showHint(res.wrongLayer);
     }
   }
 
@@ -1035,8 +1100,11 @@
   function resetGame() {
     soilTop.fill(START_DEPTH);
     buildObjTop();
-    cleared = false; failed = false;
+    cleared = false;
     winShine = 0;
+    _hintCooldown = 0;
+    if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
+    const hintEl = document.getElementById("hint"); if (hintEl) hintEl.classList.remove("show");
     // 파티클 죽이기
     [chunkPool, dustPool, sandPool].forEach((pool) => {
       const m = new THREE.Matrix4(); m.makeScale(0, 0, 0);
@@ -1057,6 +1125,7 @@
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
     if (sfxCooldown > 0) sfxCooldown -= dt;
+    if (_hintCooldown > 0) _hintCooldown -= dt;
 
     stepPool(chunkPool, dt, false, true);
     stepPool(dustPool, dt, true, false);
@@ -1087,11 +1156,20 @@
       state: () => {
         const st = computeState();
         return {
-          revealFrac: st.revealFrac, brokenFrac: st.brokenFrac,
-          cleared, failed, tool: curTool, totalObjCols
+          revealFrac: st.revealFrac,
+          cleared, tool: curTool, totalObjCols
         };
       },
       grid: () => ({ cols: COLS, rows: ROWS }),
+      // 층 경계 (검증/드라이버용). soilAbove 밴드 → 도구.
+      layers: () => ({ FINE_TOP, MID_TOP, startDepth: START_DEPTH }),
+      // (nx,ny) 셀이 오브젝트 위인지
+      isObjAt: (nx, ny) => { const [gc, gr] = nxyToCell(nx, ny); return !!isObj[gr * COLS + gc]; },
+      // 안전 단언용: 손상/실패 상태가 코드에 아예 없음을 노출 (undefined면 부재 확인)
+      hasDamageModel: () => ({
+        brokenFrac: (typeof brokenFor === "function"),   // brokenFor 제거됐으면 false
+        failedVar: (typeof window.__failed !== "undefined")
+      }),
       // soilAbove(오브젝트/바닥 위 남은 흙) at 정규화 (nx,ny) — 드라이버 도구 선택용.
       //   오브젝트 열: soilTop-objTop, 흙 열: soilTop. (음수면 파고듦=손상)
       cellSoil: (nx, ny) => {
