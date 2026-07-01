@@ -1,0 +1,122 @@
+[
+  {
+    "objKey": "junk_bottle",
+    "file": "assets/models/junk_bottle.glb",
+    "rarity": "common",
+    "displayNameKo": "낡은 유리병",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/FO1yWXFzac",
+    "author": "Quaternius",
+    "sizeKB": 12
+  },
+  {
+    "objKey": "junk_can",
+    "file": "assets/models/junk_can.glb",
+    "rarity": "common",
+    "displayNameKo": "찌그러진 깡통",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/YnowJvWqxE",
+    "author": "Quaternius",
+    "sizeKB": 18
+  },
+  {
+    "objKey": "coin",
+    "file": "assets/models/coin.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "옛 동전",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/VaGFKE0n0F",
+    "author": "Quaternius",
+    "sizeKB": 56
+  },
+  {
+    "objKey": "gem",
+    "file": "assets/models/gem.glb",
+    "rarity": "uncommon",
+    "displayNameKo": "푸른 보석",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/QgQ4rESqNc",
+    "author": "Quaternius",
+    "sizeKB": 5
+  },
+  {
+    "objKey": "shell",
+    "file": "assets/models/shell.glb",
+    "rarity": "rare",
+    "displayNameKo": "암모나이트 화석",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/bceVxKNzLaJ",
+    "author": "Poly by Google",
+    "sizeKB": 37
+  },
+  {
+    "objKey": "vase",
+    "file": "assets/models/vase.glb",
+    "rarity": "rare",
+    "displayNameKo": "고대 항아리",
+    "license": "CC-BY 3.0",
+    "source": "https://poly.pizza/m/7Q8MkXjALbL",
+    "author": "Bruno Oliveira",
+    "sizeKB": 21
+  },
+  {
+    "objKey": "crown",
+    "file": "assets/models/crown.glb",
+    "rarity": "epic",
+    "displayNameKo": "황금 왕관",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/i0PZVuVlYv",
+    "author": "Quaternius",
+    "sizeKB": 33
+  },
+  {
+    "objKey": "skull",
+    "file": "assets/models/skull.glb",
+    "rarity": "epic",
+    "displayNameKo": "해골",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/DJT7N0HuVB",
+    "author": "Quaternius",
+    "sizeKB": 21
+  },
+  {
+    "objKey": "sword",
+    "file": "assets/models/sword.glb",
+    "rarity": "epic",
+    "displayNameKo": "녹슨 검",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/Ds2bJiNI5w",
+    "author": "Quaternius",
+    "sizeKB": 18
+  },
+  {
+    "objKey": "dino",
+    "file": "assets/models/dino.glb",
+    "rarity": "legendary",
+    "displayNameKo": "티라노사우루스 화석",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/UYtneO5FpF",
+    "author": "Quaternius",
+    "sizeKB": 227
+  },
+  {
+    "objKey": "chest",
+    "file": "assets/models/chest.glb",
+    "rarity": "legendary",
+    "displayNameKo": "황금 보물상자",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/4jqKCGHpUO",
+    "author": "Quaternius",
+    "sizeKB": 200
+  },
+  {
+    "objKey": "goldbag",
+    "file": "assets/models/goldbag.glb",
+    "rarity": "legendary",
+    "displayNameKo": "금화 주머니",
+    "license": "CC0 1.0",
+    "source": "https://poly.pizza/m/vFFblhnHtb",
+    "author": "Quaternius",
+    "sizeKB": 106
+  }
+]

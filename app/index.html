@@ -133,6 +133,11 @@
     font-size:11px; font-weight:800; padding:2px 7px; }
   .col-card .cc-rarity { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.4px;
     padding:2px 8px; border-radius:10px; margin-top:6px; }
+  /* 3D 에셋 크레딧(CC-BY 저작자 표기) — 라이선스 준수 */
+  #col-credits { padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px); border-top:1px solid var(--line);
+    color:var(--sub); font-size:10.5px; line-height:1.5; text-align:center; }
+  #col-credits .cc-title { font-weight:800; color:var(--cream); margin-bottom:4px; font-size:11px; }
+  #col-credits a { color:var(--gold); text-decoration:none; }
   .col-empty { grid-column:1/-1; text-align:center; color:var(--sub); padding:60px 20px; font-size:14px; }
 
   /* 로딩/토스트 */
@@ -188,6 +193,11 @@
     <span class="count" id="col-count"></span>
   </div>
   <div id="col-grid"></div>
+  <div id="col-credits">
+    <div class="cc-title">3D 에셋 크레딧</div>
+    <div class="cc-line">“Nautilus shell” — Poly by Google · “Amphora” — Bruno Oliveira (CC‑BY 3.0)</div>
+    <div class="cc-line">그 외 발굴 모델 — Quaternius (CC0) · <a href="https://poly.pizza" target="_blank" rel="noopener">poly.pizza</a></div>
+  </div>
 </div>
 
 <div id="toast"></div>
