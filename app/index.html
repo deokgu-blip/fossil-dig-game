@@ -205,6 +205,7 @@
 <!-- 벤더: MapLibre GL JS(BSD) + Three.js r128 (상대경로, 이중타깃 호환) -->
 <script src="../vendor/maplibre/maplibre-gl.js"></script>
 <script src="../vendor/three.r128.min.js"></script>
+<script src="../vendor/models/GLTFLoader.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1007,7 +1008,11 @@
     anim: "idle",          // 현재 표시 애니("idle" | "walk")
     walkAmt: 0,            // 0(idle)↔1(walk) 부드러운 블렌드 계수
     lastMoveAt: 0,         // 마지막 이동 감지 시각(performance.now)
-    parts: null            // buildExplorer가 채우는 애니용 파트 핸들
+    parts: null,           // (폴백) 절차적 캐릭터 파트 핸들
+    // --- 리깅 글b(Kenney mini char) 애니 ---
+    mixer: null,           // THREE.AnimationMixer (리깅 캐릭터)
+    actIdle: null, actWalk: null,   // idle/walk 액션(가중치 크로스페이드)
+    rigged: false          // 리깅 글b 로드 완료 여부
   };
   const WALK_HOLD_MS = 550;   // 마지막 이동 후 이 시간 안이면 walk 유지(정지 판정 지연 → 튀는 전환 방지)
 
@@ -1019,7 +1024,54 @@
   //  ⚠️ 걷기 스윙(다리/팔 앞뒤 스윙)은 좌우축(모델 X축) 기준 회전이어야 하고, 스윙 피벗이
   //     엉덩이/어깨(관절)에 오도록 파트를 **피벗 그룹(pivot)**에 담아 회전시킨다(중심회전이면 발이
   //     원 그리며 어긋남). 각 pivot을 charState.parts에 넘겨 render 루프가 시간기반으로 흔든다.
+  // 리깅 캐릭터(Kenney mini char, CC0) — 부드러운 walk/idle 애니. 글b 비동기 로드.
+  //  grp(three.explorer)를 즉시 반환하고 로드 완료 시 캐릭터를 붙인다. 실패 시 절차적 폴백.
+  //  글b는 Y-up → wrap(rotation.x=+PI/2)로 Z-up 정합, 정면 +Y, 발 z=0, 높이 ≈1.8(구 캐릭터와 동일).
   function buildExplorer(THREE) {
+    const grp = new THREE.Group();
+    if (typeof THREE.GLTFLoader === "undefined") return buildExplorerProcedural(THREE);
+    new THREE.GLTFLoader().load("../vendor/models/explorer_rigged.glb", function (gltf) {
+      try {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3(); box.getSize(size);
+        const s = 1.8 / (size.y || 1);                       // 높이 1.8 로컬(구 캐릭터와 동일 크기)
+        model.scale.setScalar(s);
+        model.position.set(-((box.min.x + box.max.x) / 2) * s, -box.min.y * s, -((box.min.z + box.max.z) / 2) * s);
+        model.rotation.y = Math.PI;                          // wrap 회전 뒤 정면이 +Y 되도록
+        model.traverse(function (o) {
+          if (o.isMesh) { o.castShadow = true; o.frustumCulled = false;
+            if (o.material) { o.material.depthTest = true; o.material.depthWrite = true; } }  // 자기 가림 유지
+        });
+        const wrap = new THREE.Group();
+        wrap.rotation.x = Math.PI / 2;                       // Y-up → Z-up(세워 세움, 발 z=0)
+        wrap.add(model);
+        grp.add(wrap);
+        charState.charObj = wrap;   // 크기 비교(propSizeVsChar) 기준
+        // 애니: idle/walk 액션을 동시에 play + 가중치 크로스페이드(animateExplorer가 walkAmt로 조절)
+        const mixer = new THREE.AnimationMixer(model);
+        const findClip = (n) => THREE.AnimationClip.findByName(gltf.animations, n)
+          || (gltf.animations.find(c => c.name.toLowerCase().indexOf(n) >= 0));
+        const idleClip = findClip("idle") || gltf.animations[0];
+        const walkClip = findClip("walk") || gltf.animations[0];
+        charState.actIdle = mixer.clipAction(idleClip); charState.actIdle.play(); charState.actIdle.setEffectiveWeight(1);
+        charState.actWalk = mixer.clipAction(walkClip); charState.actWalk.play(); charState.actWalk.setEffectiveWeight(0);
+        charState.mixer = mixer;
+        charState.rigged = true;
+        charState.parts = null;   // 절차적 파트 미사용
+      } catch (e) {
+        try { console.warn("[char] rigged 세팅 실패 → 절차적", e && e.message); } catch(_){}
+        grp.add(buildExplorerProcedural(THREE));
+      }
+    }, undefined, function (err) {
+      try { console.warn("[char] rigged glb 로드 실패 → 절차적", err && err.message); } catch(_){}
+      grp.add(buildExplorerProcedural(THREE));
+    });
+    return grp;
+  }
+
+  // (폴백) 로우폴리 탐험가 — 절차적. 리깅 글b 로드 실패 시 사용.
+  function buildExplorerProcedural(THREE) {
     const grp = new THREE.Group();
     const M = (col, rough) => new THREE.MeshStandardMaterial({ color: col, roughness: rough==null?0.85:rough, metalness: 0.0 });
     const matSkin = M(0xe3b48f), matBody = M(0x7a5a34), matPants = M(0x4b3925),
@@ -1079,16 +1131,23 @@
   //     + 무릎 굽힘·전진 기울임을 추가해 "확실히 걷는" 실루엣을 만든다. 모든 값은 walkAmt로 스케일.
   //   ★ QA: 실제 스윙 각도(charState.legSwing)를 노출해 '값이 실제로 반영되는지' 헤드리스 단언.
   function animateExplorer(nowMs) {
-    const p = charState.parts;
-    if (!p) return;
-    // walk 목표: 마지막 이동이 최근이면 1, 아니면 0. walkAmt를 목표로 감쇠 보간(부드러운 전환).
+    // walk 목표: 마지막 이동이 최근이면 1, 아니면 0. walkAmt를 목표로 감쇠 보간. — 항상 갱신
     const target = (nowMs - charState.lastMoveAt) < WALK_HOLD_MS ? 1 : 0;
     charState.walkAmt += (target - charState.walkAmt) * 0.15;
     if (charState.walkAmt < 0.02) charState.walkAmt = 0;
     if (charState.walkAmt > 0.985) charState.walkAmt = 1;
     charState.anim = charState.walkAmt >= 0.5 ? "walk" : "idle";
-
     const w = charState.walkAmt;
+
+    // 리깅 캐릭터: idle↔walk 액션 가중치 크로스페이드(모션 진행은 mixer.update(dt)가 담당)
+    if (charState.mixer) {
+      if (charState.actWalk) charState.actWalk.setEffectiveWeight(w);
+      if (charState.actIdle) charState.actIdle.setEffectiveWeight(1 - w);
+      return;
+    }
+    // --- 절차적 폴백(파트 스윙) ---
+    const p = charState.parts;
+    if (!p) return;
     const t = nowMs * 0.001;
     // 걷기 사이클(스텝 주파수 ≈ 2.4Hz 느낌)
     const cyc = t * 8.4;
@@ -1192,14 +1251,17 @@
   //   · walk/전환 중: 매 프레임 repaint(부드러운 60fps 걷기).
   //   · 완전 idle(walkAmt=0 안정): 은은한 호흡을 위해 ~12fps로만 repaint(모바일 배터리 절약).
   //   render 안에서 triggerRepaint를 부르던 기존 방식은 render 예외 1회로 루프가 죽는 위험이 있었다.
-  let _animRAF = 0, _lastIdleRepaint = 0;
+  let _animRAF = 0, _lastIdleRepaint = 0, _lastAnimT = 0;
   function startAnimTicker() {
     if (_animRAF) return;   // 멱등
     const tick = () => {
       _animRAF = requestAnimationFrame(tick);
       const now = performance.now();
+      const dt = _lastAnimT ? Math.min(0.05, (now - _lastAnimT) / 1000) : 0.016;
+      _lastAnimT = now;
       // 포즈/walkAmt 갱신(항상). 렌더 실패와 무관하게 애니 상태는 흐른다.
       animateExplorer(now);
+      if (charState.mixer) charState.mixer.update(dt);   // 리깅 애니 진행(부드러운 walk/idle)
       if (!map) return;
       const moving = charState.walkAmt > 0.001;
       if (moving) {
@@ -1553,9 +1615,13 @@
     charExists: () => !!(charState.layerAdded || charState.markerObj),
     charPos: () => ({ lng: charState.lng, lat: charState.lat }),
     // === 캐릭터 애니메이션 검증 ===
-    charModel: () => charState.useMarker ? "marker" : (charState.parts ? "procedural" : null),
+    charModel: () => charState.useMarker ? "marker" : (charState.rigged ? "rigged" : (charState.parts ? "procedural" : null)),
     charState: () => charState.anim,                 // "idle" | "walk"
     charWalkAmt: () => charState.walkAmt,            // 0(idle)↔1(walk)
+    // 리깅 애니 검증: mixer 시간 진행 + walk 액션 유효 가중치
+    charMixerTime: () => charState.mixer ? charState.mixer.time : null,
+    charWalkWeight: () => charState.actWalk ? charState.actWalk.getEffectiveWeight() : null,
+    charIdleWeight: () => charState.actIdle ? charState.actIdle.getEffectiveWeight() : null,
     // 실제 다리 스윙 각도(rad) — 애니가 파트에 실제 반영되는지 단언용
     charLegSwing: () => (typeof charState.legSwing === "number" ? charState.legSwing : null),
     charLegRotX: () => (charState.parts && charState.parts.legs[0]) ? charState.parts.legs[0].rotation.x : null,
@@ -1573,10 +1639,12 @@
     // 프롭 높이 vs 캐릭터 높이(같은 부모 그룹 → 같은 스케일 공간, 비율 유효).
     //  charTop=모자 꼭대기 world z, tallestProp=가장 큰 프롭 꼭대기 z. ratio<1이면 캐릭터보다 작음.
     propSizeVsChar: () => { try {
-        if (!charState.parts || !charState.props || typeof THREE === "undefined") return null;
-        charState.parts.grp.updateWorldMatrix(true, true);
-        const cbox = new THREE.Box3().setFromObject(charState.parts.bodyGrp);
-        const charTop = cbox.max.z;
+        if (!charState.props || typeof THREE === "undefined") return null;
+        // 캐릭터 높이: 리깅 모델(charObj) 우선, 없으면 절차 파트(bodyGrp)
+        let charTop = 0;
+        if (charState.charObj) { const cb = new THREE.Box3().setFromObject(charState.charObj); charTop = cb.max.z; }
+        else if (charState.parts) { const cb = new THREE.Box3().setFromObject(charState.parts.bodyGrp); charTop = cb.max.z; }
+        if (!charTop || !isFinite(charTop)) return null;
         let tallest = 0;
         for (const p of charState.props.children) {
           const b = new THREE.Box3().setFromObject(p);
