@@ -128,6 +128,7 @@
     spot: QP.get("spot") || null,        // 소모 처리용 스폰 지점 id
     active: QP.has("obj") || QP.has("meta")
   };
+  const CHEAT = QP.has("cheat") && QP.get("cheat") !== "0";   // 치트: 즉시발굴 버튼 노출
   let _completeSent = false;
   function notifyComplete() {
     if (_completeSent) return;
@@ -1340,6 +1341,21 @@
   // ============================================================
   // BOOT
   // ============================================================
+  // 치트(?cheat=1): 즉시발굴 버튼 — 오브젝트 위 흙 전부 제거 → 100% → finishClear(상승+오버레이).
+  function addCheatButton() {
+    const b = document.createElement("button");
+    b.textContent = "⚡ 즉시발굴";
+    b.style.cssText = "position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:2200;"
+      + "padding:11px 15px;border-radius:13px;border:1px solid #f0c674;background:rgba(90,64,30,.94);color:#ffe6a0;"
+      + "font-size:15px;font-weight:800;box-shadow:0 3px 12px rgba(0,0,0,.45);cursor:pointer;";
+    b.addEventListener("click", function () {
+      if (cleared) return;
+      for (let i = 0; i < N; i++) { if (isObj[i] && soilTop[i] > objTop[i]) soilTop[i] = objTop[i]; }
+      fullSync(); updateHUD();   // 발굴률 100% → finishClear
+    });
+    document.body.appendChild(b);
+  }
+
   function boot() {
     if (typeof THREE === "undefined") {
       document.body.innerHTML = "<div style='color:#fff;padding:40px;font:16px sans-serif'>Three.js 로드 실패 (../vendor/three.r128.min.js)</div>";
@@ -1361,6 +1377,7 @@
     document.getElementById("overlay").addEventListener("click", (e) => {
       if (e.target.id === "overlay" || e.target.id === "ov-sub" || e.target.id === "ov-title") resetGame();
     });
+    if (CHEAT) addCheatButton();   // ?cheat=1 → 즉시발굴 치트 버튼
 
     lastT = performance.now();
     requestAnimationFrame(loop);

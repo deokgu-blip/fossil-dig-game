@@ -223,7 +223,8 @@
   // 설정
   // ==========================================================================
   const QP = new URLSearchParams(location.search);
-  const MOCK = QP.has("mock") ? (QP.get("mock") !== "0") : false;   // ?mock=1 → 개발용 가짜 GPS
+  const CHEAT = QP.has("cheat") && QP.get("cheat") !== "0";          // ?cheat=1 → 치트(가짜GPS + 발굴 즉시완료 버튼)
+  const MOCK = CHEAT || (QP.has("mock") ? (QP.get("mock") !== "0") : false);   // ?mock=1 → 개발용 가짜 GPS
   const DIG_URL = "../engine/fossil-dig.html";                       // 발굴게임 (상대경로, 이중타깃 호환)
   const REGIONS_URL = "../stages/regions.json";
   const MODELS_URL = "../assets/models/manifest.json";   // 발굴 대상 모델 마스터 목록(도감/loot 풀)
@@ -681,7 +682,8 @@
     activeSpot = spot;
     const q = new URLSearchParams({
       obj: item.obj, rarity: item.rarity, region: item.region,
-      name: encodeURIComponent(item.name), spot: spot ? spot.id : ""
+      name: encodeURIComponent(item.name), spot: spot ? spot.id : "",
+      cheat: CHEAT ? "1" : ""   // 치트: 발굴게임에 즉시완료 버튼 노출
     });
     const frame = document.getElementById("dig-frame");
     frame.src = DIG_URL + "?" + q.toString();
