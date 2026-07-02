@@ -413,7 +413,8 @@
         const center = new THREE.Vector3(); box.getCenter(center);
         const horiz = Math.max(size.x, size.z) || 1;
         const targetHoriz = OBJ_FOOTPRINT_R * 1.15 * sizeScale;
-        const targetHeight = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.5;
+        // 오브젝트가 흙 컬럼의 아래 절반만 차지 → 위에 흙이 두껍게(훨씬 깊게 매립, 사용자 2026-07-02).
+        const targetHeight = (HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y) * 0.5;
         const s = cfg.fitScale != null ? cfg.fitScale * sizeScale
           : Math.min(targetHoriz / horiz, targetHeight / (size.y || 1));
         model.scale.setScalar(s);
@@ -423,18 +424,26 @@
           if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
             if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
         });
-        // 눕히기 + 매립 보장(0%에서 땅 위로 안 삐져나옴)
+        // 랜덤 매장 자세(사용자 2026-07-02: 항상 90° 말고 뒤집힘/대각선/옆으로 — 현실 네러티브) + 매립 보장.
+        //  정적 모델=임의 회전 후 setFromObject로 높이 캡→어떤 자세든 흙에 묻힘. 스키닝=특이라 약한 랜덤 틸트.
         const ceil = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.55;
-        const isTall = (size.y >= size.x && size.y >= size.z && size.y < 1e4);
+        const skinned = !!(cfg.posedBox || cfg.fitScale);
+        const rnd = (a) => (Math.random() * 2 - 1) * a;
         const lay = new THREE.Group();
-        if (isTall) { lay.rotation.x = -Math.PI / 2; lay.rotation.z = OBJ_LAY_TILT; }
-        else { lay.rotation.z = OBJ_LAY_TILT * 0.5; }
+        if (skinned) {
+          lay.rotation.set(-Math.PI / 2 + rnd(0.3), Math.random() * Math.PI * 2, rnd(0.4));
+        } else {
+          // 다양한 기본 자세(눕힘/뒤집힘/옆/대각) 중 하나 + 큰 지터
+          const poses = [[Math.PI/2,0],[-Math.PI/2,0],[Math.PI,0],[Math.PI/2,Math.PI/2],[0,0]];
+          const p = poses[(Math.random() * poses.length) | 0];
+          lay.rotation.set(p[0] + rnd(0.55), Math.random() * Math.PI * 2, p[1] + rnd(0.55));
+        }
         lay.add(model);
         lay.updateWorldMatrix(true, true);
         let groundY;
-        if (cfg.posedBox || cfg.fitScale) {
+        if (skinned) {
           let laidH = cfg.layCap != null ? cfg.layCap * sizeScale : 0;
-          if (cfg.posedBox) laidH = (isTall ? cfg.posedBox.sz[2] : cfg.posedBox.sz[1]) * s;
+          if (cfg.posedBox) laidH = Math.max(cfg.posedBox.sz[0], cfg.posedBox.sz[1], cfg.posedBox.sz[2]) * s;  // 보수적(어떤 회전이든 안 삐져나옴)
           if (laidH > ceil) lay.scale.setScalar(ceil / laidH);
           groundY = (cfg.layY != null ? cfg.layY : 0.3);
         } else {
@@ -672,10 +681,7 @@
           // 뼈에 살짝 따뜻한 아이보리 톤 (푸른기 제거)
           bone *= vec3(1.02, 0.98, 0.90);
 
-          // --- 발굴 가이드(2026-07-02): 아직 흙에 덮인 '오브젝트 풋프린트'를 은은한 골드로 표시 →
-          //  "여기 파세요/여기 더 파야 완료". vLayer=덮임정도(1=많이덮임 .. 0=드러남). 파낼수록 사라짐.
-          float hint = clamp(vLayer, 0.0, 1.0);
-          soil = mix(soil, soil * vec3(1.20, 1.07, 0.70) + vec3(0.045, 0.03, 0.0), hint * 0.5);
+          // 발굴 위치 힌트 제거(사용자 2026-07-02: 흙색으로 위치 구분되면 찾는 재미↓) — terrain 순수 흙.
 
           float rev = clamp(vReveal, 0.0, 1.0);
           // 흙→뼈 전이는 살짝 샤프하게 (걷히는 경계가 또렷)
@@ -783,13 +789,8 @@
   //  → reveal(뼈 크림 블렌드)·layer(층 tint)를 끈다(항상 0). 판 곳은 셰이더 pitShade가
   //    깊이에 따라 어둡게 처리 → 흙 구덩이로 보인다.
   function revealFor(i) { return 0; }
-  // 발굴 가이드: 덮인 오브젝트 셀=골드 힌트(덮임 많을수록 강, 드러나면 0). 셰이더가 표시.
-  function layerFor(i) {
-    if (!isObj[i]) return 0;
-    const cover = soilTop[i] - objTop[i];
-    if (cover <= TOL) return 0;
-    return Math.min(1, (cover - TOL) / (0.32 * START_DEPTH));
-  }
+  // 발굴 위치 힌트 제거(사용자 2026-07-02: 흙색 구분되면 찾는 재미↓). terrain=순수 흙.
+  function layerFor(i)  { return 0; }
 
   // 전체 초기 반영 (reveal→color.r, layer→color.g, 높이→posAttr Y)
   function fullSync() {

@@ -141,11 +141,23 @@
   .col-card .cc-rarity { display:inline-flex; align-items:center; justify-content:center; min-width:64px; height:22px;
     font-size:10px; font-weight:900; letter-spacing:.4px; margin-top:6px; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.6);
     background-repeat:no-repeat; background-position:center; background-size:100% 100%; }
-  /* 3D 에셋 크레딧(CC-BY 저작자 표기) — 라이선스 준수 */
-  #col-credits { padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px); border-top:1px solid var(--line);
-    color:var(--sub); font-size:10.5px; line-height:1.5; text-align:center; }
-  #col-credits .cc-title { font-weight:800; color:var(--cream); margin-bottom:4px; font-size:11px; }
-  #col-credits a { color:var(--gold); text-decoration:none; }
+  /* 설정 버튼(⚙️) — 아이콘 이미지 대신 이모지 */
+  #btn-settings { color:#f3e4c6; background:rgba(30,20,12,.6); font-size:22px; line-height:1; }
+  /* 도움주신 분들(크레딧) 화면 */
+  #credits { position:fixed; inset:0; z-index:1600; display:none; flex-direction:column;
+    background:var(--bg); }
+  #credits.show { display:flex; }
+  #cr-head { display:flex; align-items:center; gap:12px; padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;
+    border-bottom:1px solid var(--line); }
+  #cr-head h1 { font-size:19px; font-weight:800; }
+  #cr-back { width:40px; height:40px; border-radius:12px; background:var(--panel2); color:var(--cream);
+    border:1px solid var(--line); font-size:20px; cursor:pointer; }
+  #cr-body { flex:1; overflow-y:auto; padding:18px 20px calc(env(safe-area-inset-bottom,0px) + 24px); }
+  #cr-body section { margin-bottom:20px; }
+  #cr-body h2 { font-size:14px; font-weight:800; color:var(--gold); margin-bottom:6px; }
+  #cr-body p { font-size:13px; color:var(--cream); line-height:1.6; opacity:.9; }
+  #cr-body a { color:var(--gold); text-decoration:none; }
+  #cr-body .cr-thanks { text-align:center; color:var(--sub); margin-top:10px; font-size:13px; }
   .col-empty { grid-column:1/-1; text-align:center; color:var(--sub); padding:60px 20px; font-size:14px; }
 
   /* 로딩/토스트 */
@@ -164,6 +176,7 @@
   <div class="spacer"></div>
   <button class="icon-btn" id="btn-locate" title="내 위치" aria-label="내 위치"></button>
   <button class="icon-btn" id="btn-collection" title="도감" aria-label="도감"></button>
+  <button class="icon-btn" id="btn-settings" title="설정" aria-label="설정">⚙️</button>
 </div>
 
 <div id="mock-badge" class="">MOCK GPS</div>
@@ -202,10 +215,37 @@
     <span class="count" id="col-count"></span>
   </div>
   <div id="col-grid"></div>
-  <div id="col-credits">
-    <div class="cc-title">3D 에셋 크레딧</div>
-    <div class="cc-line">“Nautilus shell” — Poly by Google · “Amphora” — Bruno Oliveira (CC‑BY 3.0)</div>
-    <div class="cc-line">그 외 발굴 모델 — Quaternius (CC0) · <a href="https://poly.pizza" target="_blank" rel="noopener">poly.pizza</a></div>
+</div>
+
+<!-- 설정 → 도움주신 분들 (크레딧: 지도 API·3D 에셋·캐릭터 라이선스) -->
+<div id="credits">
+  <div id="cr-head">
+    <button id="cr-back">‹</button>
+    <h1>도움주신 분들</h1>
+  </div>
+  <div id="cr-body">
+    <section>
+      <h2>🗺️ 지도 &amp; 데이터</h2>
+      <p>MapLibre GL JS (BSD‑3)</p>
+      <p>지도 데이터 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 (ODbL)</p>
+      <p>스타일 <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · 타일 OpenMapTiles</p>
+    </section>
+    <section>
+      <h2>⛏️ 발굴 3D 모델</h2>
+      <p>Quaternius · Kenney · Kay Lousberg (KayKit) — CC0</p>
+      <p>“Nautilus shell” — Poly by Google (CC‑BY 3.0)</p>
+      <p>“Amphora” — Bruno Oliveira (CC‑BY 3.0)</p>
+      <p>제공 <a href="https://poly.pizza" target="_blank" rel="noopener">poly.pizza</a></p>
+    </section>
+    <section>
+      <h2>🚶 캐릭터</h2>
+      <p>Kenney “Mini Characters” (CC0) · <a href="https://kenney.nl" target="_blank" rel="noopener">kenney.nl</a></p>
+    </section>
+    <section>
+      <h2>🎨 UI 아트</h2>
+      <p>AI 이미지 생성</p>
+    </section>
+    <p class="cr-thanks">모두 감사합니다 🙏</p>
   </div>
 </div>
 
@@ -1492,8 +1532,8 @@
     if (document.getElementById("cheat-joy")) return;
     const base = document.createElement("div");
     base.id = "cheat-joy";
-    base.style.cssText = "position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 120px);z-index:1200;"
-      + "width:120px;height:120px;border-radius:50%;background:rgba(30,20,12,.5);border:2px solid rgba(240,198,116,.55);"
+    base.style.cssText = "position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 185px);z-index:1500;"
+      + "width:118px;height:118px;border-radius:50%;background:rgba(30,20,12,.5);border:2px solid rgba(240,198,116,.55);"
       + "touch-action:none;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.35);";
     const nub = document.createElement("div");
     nub.style.cssText = "position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;"
@@ -1606,6 +1646,12 @@
   });
   document.getElementById("col-back").addEventListener("click", () => {
     document.getElementById("collection").classList.remove("show");
+  });
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    document.getElementById("credits").classList.add("show");
+  });
+  document.getElementById("cr-back").addEventListener("click", () => {
+    document.getElementById("credits").classList.remove("show");
   });
   document.getElementById("btn-locate").addEventListener("click", () => {
     if (player.lat != null) { centerCameraOnPlayer(false); }
