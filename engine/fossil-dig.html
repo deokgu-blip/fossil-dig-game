@@ -129,16 +129,25 @@
     active: QP.has("obj") || QP.has("meta")
   };
   const CHEAT = QP.has("cheat") && QP.get("cheat") !== "0";   // 치트: 즉시발굴 버튼 노출
+  // 다중 오브젝트: ?objs=JSON([{obj,name,rarity},...]) (사용자 2026-07-02: 한 발굴에 여러 개). 없으면 단일 폴백.
+  ENCOUNTER.objs = (function () {
+    try { const raw = QP.get("objs"); if (raw) { const a = JSON.parse(decodeURIComponent(raw)); if (Array.isArray(a) && a.length) return a; } } catch (e) {}
+    if (ENCOUNTER.obj) return [{ obj: ENCOUNTER.obj, name: ENCOUNTER.name, rarity: ENCOUNTER.rarity }];
+    return [{ obj: "dino_skull", name: null, rarity: "common" }];
+  })();
   let _completeSent = false;
   function notifyComplete() {
     if (_completeSent) return;
     _completeSent = true;
+    const list = (ENCOUNTER.objs && ENCOUNTER.objs.length) ? ENCOUNTER.objs : null;
+    const first = list ? list[0] : null;
     const payload = {
       type: "dig-complete",
-      obj: ENCOUNTER.obj || "dino_skull",
-      rarity: ENCOUNTER.rarity || "common",
+      obj: (first && first.obj) || ENCOUNTER.obj || "dino_skull",
+      rarity: (first && first.rarity) || ENCOUNTER.rarity || "common",
       region: ENCOUNTER.region || "default",
-      name: ENCOUNTER.name || null,
+      name: (first && first.name) || ENCOUNTER.name || null,
+      objs: list,                                  // 다중 오브젝트 전체(맵이 각각 도감 기록)
       spot: ENCOUNTER.spot || null,
       ts: Date.now()
     };
@@ -382,82 +391,95 @@
     return box;
   }
 
-  function loadObjModel() {
-    const key = resolveObjKey(STAGE.object.type);
-    window.__objKey = key;
-    // MODEL_CFG는 '오버라이드'(스키닝 posedBox·애니 등)만. 없으면 키=파일명으로 동적 로드(300+ 확장).
+  // 한 개 모델을 로드해 lay 그룹으로 감싸(눕히기·매립캡·접지) objGroup의 (ox,oz) 위치에 배치.
+  //  sizeScale: 다중 오브젝트일 때 각 물건을 작게(클러스터로 함께 묻힘).
+  function loadOneModel(spec, ox, oz, sizeScale, onDone) {
+    const key = resolveObjKey(spec.obj);
     const cfg = MODEL_CFG[key] || { file: key + ".glb" };
+    new THREE.GLTFLoader().load(MODEL_BASE + cfg.file, function (gltf) {
+      try {
+        const model = gltf.scene;
+        if (cfg.rotY) model.rotation.y = cfg.rotY;
+        let box;
+        if (cfg.posedBox) {
+          const pb = cfg.posedBox;
+          box = new THREE.Box3(
+            new THREE.Vector3(pb.c[0] - pb.sz[0]/2, pb.minY, pb.c[2] - pb.sz[2]/2),
+            new THREE.Vector3(pb.c[0] + pb.sz[0]/2, pb.minY + pb.sz[1], pb.c[2] + pb.sz[2]/2));
+        } else {
+          box = computeModelBox(model);
+        }
+        const size = new THREE.Vector3(); box.getSize(size);
+        const center = new THREE.Vector3(); box.getCenter(center);
+        const horiz = Math.max(size.x, size.z) || 1;
+        const targetHoriz = OBJ_FOOTPRINT_R * 1.15 * sizeScale;
+        const targetHeight = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.5;
+        const s = cfg.fitScale != null ? cfg.fitScale * sizeScale
+          : Math.min(targetHoriz / horiz, targetHeight / (size.y || 1));
+        model.scale.setScalar(s);
+        if (cfg.pos) model.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+        else model.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+        model.traverse(function (o) {
+          if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
+            if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
+        });
+        // 눕히기 + 매립 보장(0%에서 땅 위로 안 삐져나옴)
+        const ceil = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.55;
+        const isTall = (size.y >= size.x && size.y >= size.z && size.y < 1e4);
+        const lay = new THREE.Group();
+        if (isTall) { lay.rotation.x = -Math.PI / 2; lay.rotation.z = OBJ_LAY_TILT; }
+        else { lay.rotation.z = OBJ_LAY_TILT * 0.5; }
+        lay.add(model);
+        lay.updateWorldMatrix(true, true);
+        let groundY;
+        if (cfg.posedBox || cfg.fitScale) {
+          let laidH = cfg.layCap != null ? cfg.layCap * sizeScale : 0;
+          if (cfg.posedBox) laidH = (isTall ? cfg.posedBox.sz[2] : cfg.posedBox.sz[1]) * s;
+          if (laidH > ceil) lay.scale.setScalar(ceil / laidH);
+          groundY = (cfg.layY != null ? cfg.layY : 0.3);
+        } else {
+          let lb = new THREE.Box3().setFromObject(lay);
+          const laidH = (lb.max.y - lb.min.y) || 1;
+          if (laidH > ceil) { lay.scale.setScalar(ceil / laidH); lb = new THREE.Box3().setFromObject(lay); }
+          groundY = isFinite(lb.min.y) ? -lb.min.y : 0;
+        }
+        lay.position.set(ox, groundY, oz);   // 클러스터 오프셋 + 바닥 접지
+        if (objGroup) objGroup.add(lay);
+        if (cfg.animate && gltf.animations && gltf.animations.length && !objMixer) {
+          objMixer = new THREE.AnimationMixer(model);
+          objMixer.clipAction(gltf.animations[0]).play();
+        }
+      } catch (e) { try { console.warn("obj model place fail", key, e); } catch(_){} }
+      onDone();
+    }, undefined, function (err) { try { console.warn("obj model load fail", key, err); } catch(e){} onDone(); });
+  }
+
+  // 발굴 대상 = ENCOUNTER.objs (1~N개). 모두 한 objGroup 아래 클러스터로 묻고, 로드 완료 후 union 풋프린트.
+  function loadObjModel() {
     if (typeof THREE.GLTFLoader === "undefined") return;
+    const specs = ENCOUNTER.objs && ENCOUNTER.objs.length ? ENCOUNTER.objs : [{ obj: STAGE.object.type }];
+    const N = specs.length;
+    window.__objKey = resolveObjKey(specs[0].obj);
+    window.__objCount = N;
     const grp = new THREE.Group();
-    grp.position.set(objCX, OBJ_BASE_Y, objCZ);  // 매설 위치(제각각) + 밑면이 bed 표면에 앉음
+    grp.position.set(objCX, OBJ_BASE_Y, objCZ);   // 매설 위치(제각각)
     scene.add(grp);
     objGroup = grp;
-    new THREE.GLTFLoader().load(MODEL_BASE + cfg.file, function (gltf) {
-      const model = gltf.scene;
-      if (cfg.rotY) model.rotation.y = cfg.rotY;
-      let box;
-      if (cfg.posedBox) {
-        const pb = cfg.posedBox;   // 측정된 실제 포즈 bbox(스키닝 모델의 bind-pose 부정확 회피)
-        box = new THREE.Box3(
-          new THREE.Vector3(pb.c[0] - pb.sz[0]/2, pb.minY, pb.c[2] - pb.sz[2]/2),
-          new THREE.Vector3(pb.c[0] + pb.sz[0]/2, pb.minY + pb.sz[1], pb.c[2] + pb.sz[2]/2));
-      } else {
-        box = computeModelBox(model);   // 스키닝 포함 실제 렌더 bbox
-      }
-      const size = new THREE.Vector3(); box.getSize(size);
-      const center = new THREE.Vector3(); box.getCenter(center);
-      const horiz = Math.max(size.x, size.z) || 1;
-      const targetHoriz = OBJ_FOOTPRINT_R * 1.15;    // 지름 ≈ footprint
-      const targetHeight = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.5;  // 흙 표면 아래(묻힘)
-      // fitScale: 스키닝 모델(T-Rex)은 bind-pose bbox가 실제보다 커서 auto-fit이 작아짐 → 수동 배율.
-      const s = cfg.fitScale != null ? cfg.fitScale
-        : Math.min(targetHoriz / horiz, targetHeight / (size.y || 1));
-      window.__objDbg = { sx:+size.x.toFixed(3), sy:+size.y.toFixed(3), sz:+size.z.toFixed(3), horiz:+horiz.toFixed(3), s:+s.toFixed(4) };
-      model.scale.setScalar(s);
-      if (cfg.pos) {
-        // 스키닝/양자화 모델(T-Rex): bind-pose bbox가 부정확 → box 중심정렬 대신 수동 위치.
-        model.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
-      } else {
-        // XZ 중심을 원점에, 밑면(min.y)을 grp 원점(=bed)에 맞춤
-        model.position.set(-center.x * s, -box.min.y * s, -center.z * s);
-      }
-      model.traverse(function (o) {
-        if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
-          if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
+    const sizeScale = N > 1 ? 0.6 : 1.0;                       // 여럿이면 각각 작게(함께 들어가게)
+    const clusterR = N > 1 ? OBJ_FOOTPRINT_R * 0.34 : 0;       // 클러스터 반경
+    let loaded = 0;
+    specs.forEach(function (spec, i) {
+      const ang = (i / N) * Math.PI * 2 + 0.6;
+      const ox = Math.cos(ang) * clusterR, oz = Math.sin(ang) * clusterR;
+      loadOneModel(spec, ox, oz, sizeScale, function () {
+        loaded++;
+        if (loaded >= N) {
+          applyModelFootprint(grp);   // 클러스터 전체(union)로 발굴 영역 → 모두 드러내야 100%
+          objModelReady = true;
+          window.__objModelReady = true;
+        }
       });
-      // ── 눕히기 + 매립 보장 (사용자 2026-07-01 눕히기 / 07-02 매립버그 수정) ──
-      //  '높이가 최장축'인 세워진 물건만 눕힌다(차량·동전 등 이미 납작한 건 세우지 않음).
-      //  눕힌/세운 실제 높이가 매립 천장(흙 표면 아래)을 넘으면 축소 → 0%에서 땅 위로 안 삐져나옴.
-      const ceil = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.55;   // 매립 천장(월드 Y)
-      const isTall = (size.y >= size.x && size.y >= size.z && size.y < 1e4);  // 높이 최장(스키닝 garbage 제외)
-      const lay = new THREE.Group();
-      if (isTall) { lay.rotation.x = -Math.PI / 2; lay.rotation.z = OBJ_LAY_TILT; }   // 세워진 것 → 눕힘
-      else { lay.rotation.z = OBJ_LAY_TILT * 0.5; }                                    // 이미 납작 → 살짝 기울임만
-      lay.add(model);
-      lay.updateWorldMatrix(true, true);
-      if (cfg.posedBox || cfg.fitScale) {
-        // 스키닝: bind-pose bbox 부정확 → posedBox로 실제 세로높이 추정해 캡(없으면 cfg.layCap).
-        let laidH = cfg.layCap != null ? cfg.layCap : 0;
-        if (cfg.posedBox) laidH = (isTall ? cfg.posedBox.sz[2] : cfg.posedBox.sz[1]) * s;
-        if (laidH > ceil) lay.scale.setScalar(ceil / laidH);
-        lay.position.y = (cfg.layY != null ? cfg.layY : 0.3);
-      } else {
-        let lb = new THREE.Box3().setFromObject(lay);       // 눕힌 실제 bbox
-        const laidH = (lb.max.y - lb.min.y) || 1;
-        if (laidH > ceil) { lay.scale.setScalar(ceil / laidH); lb = new THREE.Box3().setFromObject(lay); }
-        if (isFinite(lb.min.y)) lay.position.y = -lb.min.y;   // 바닥을 grp 원점(bed)에 접지
-      }
-      grp.add(lay);
-      applyModelFootprint(lay);   // 발굴률을 실제 모델 크기 기준으로(작은 물건=작은 영역)
-      // 애니는 기본 OFF: 스키닝 모델(T-Rex)은 rest pose로 렌더해야 fit(rest 기준 bounds)과 일치해
-      //  정확히 보인다. 애니 재생은 rest와 포즈가 달라 정렬이 어긋나므로 cfg.animate일 때만.
-      if (cfg.animate && gltf.animations && gltf.animations.length) {
-        objMixer = new THREE.AnimationMixer(model);
-        objMixer.clipAction(gltf.animations[0]).play();
-      }
-      objModelReady = true;
-      window.__objModelReady = true;
-    }, undefined, function (err) { try { console.warn("obj model load fail", key, err); } catch(e){} });
+    });
   }
 
   // 100% 클리어 시: 모델을 땅 밖으로 끌어올린다(easeOut) + 이후 천천히 회전.

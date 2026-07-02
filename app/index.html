@@ -632,15 +632,19 @@
     if (payload.ts && payload.ts === _lastCompleteTs) return;
     _lastCompleteTs = payload.ts || Date.now();
 
-    // 어떤 spot이었는지 복원 (활성 spot 우선, 없으면 payload로 재구성)
-    const item = {
+    const region = payload.region || (activeSpot && activeSpot.item.region) || curRegionKey;
+    // 다중 오브젝트: payload.objs 있으면 전부 도감 기록. 없으면 단일(구 경로).
+    const list = (Array.isArray(payload.objs) && payload.objs.length) ? payload.objs : [{
       obj: payload.obj || "dino_skull",
       name: payload.name || (activeSpot && activeSpot.item.name) || payload.obj || "화석",
-      rarity: payload.rarity || (activeSpot && activeSpot.item.rarity) || "common",
-      region: payload.region || (activeSpot && activeSpot.item.region) || curRegionKey,
-      era: (activeSpot && activeSpot.item.era) || null
-    };
-    const rec = onDiscover(item);        // 도감 기록 (단일 초크포인트)
+      rarity: payload.rarity || (activeSpot && activeSpot.item.rarity) || "common"
+    }];
+    let primary = null, primaryRec = null;
+    list.forEach((o, i) => {
+      const it = { obj: o.obj, name: o.name || o.obj, rarity: o.rarity || "common", region: region, era: null };
+      const rec = onDiscover(it);        // 각 물건 도감 기록 (단일 초크포인트)
+      if (i === 0) { primary = it; primaryRec = rec; }
+    });
 
     // 그 지점 소모 (제거 + 쿨다운 후 재스폰)
     consumeSpot(activeSpot);
@@ -648,7 +652,7 @@
 
     // 발굴 오버레이 닫고 결과 표시
     closeDig();
-    showResult(item, rec.qty);
+    showResult(primary, primaryRec.qty, list.length);
   }
 
   window.addEventListener("message", (e) => {
@@ -659,16 +663,16 @@
   // ==========================================================================
   // 발견 결과 카드
   // ==========================================================================
-  function showResult(item, qty) {
+  function showResult(item, qty, count) {
     document.getElementById("r-icon").textContent = iconFor(item);
-    document.getElementById("r-name").textContent = item.name;
+    document.getElementById("r-name").textContent = item.name + ((count && count > 1) ? "  외 " + (count - 1) + "개" : "");
     const rb = document.getElementById("r-rarity");
     rb.textContent = RARITY_KR[item.rarity] || "흔함";
     rb.style.backgroundImage = "url(" + badgeUrl(item.rarity) + ")";
     rb.style.color = "#fff";
     const regLabel = (REGIONS && REGIONS.regions[item.region] && REGIONS.regions[item.region].label) || curRegionMeta.label;
     document.getElementById("r-meta").textContent =
-      (item.era ? item.era + " · " : "") + regLabel + (qty>1 ? "  ·  보유 "+qty : "");
+      ((count && count > 1) ? "🎉 " + count + "개 발굴! · " : "") + regLabel + (qty>1 ? "  ·  보유 "+qty : "");
     document.getElementById("result").classList.add("show");
   }
   document.getElementById("r-ok").addEventListener("click", () => {
@@ -680,9 +684,15 @@
   // ==========================================================================
   function openDig(item, spot) {
     activeSpot = spot;
+    // 다중 오브젝트(사용자 2026-07-02): 랜덤 개수 N(1:55% / 2:30% / 3:15%). 첫 개=이 지점 item, 나머지=지역 롤.
+    const rN = Math.random();
+    const N = rN < 0.55 ? 1 : (rN < 0.85 ? 2 : 3);
+    const objs = [{ obj:item.obj, name:item.name, rarity:item.rarity }];
+    for (let i = 1; i < N; i++) { const it = rollLoot(curRegionKey); objs.push({ obj:it.obj, name:it.name, rarity:it.rarity }); }
     const q = new URLSearchParams({
       obj: item.obj, rarity: item.rarity, region: item.region,
       name: encodeURIComponent(item.name), spot: spot ? spot.id : "",
+      objs: encodeURIComponent(JSON.stringify(objs)),   // 다중 오브젝트 목록
       cheat: CHEAT ? "1" : ""   // 치트: 발굴게임에 즉시완료 버튼 노출
     });
     const frame = document.getElementById("dig-frame");
