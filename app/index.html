@@ -102,21 +102,34 @@
     background:rgba(10,7,4,.78); backdrop-filter:blur(4px); padding:26px; }
   #result.show { display:flex; animation:fade .35s ease; }
   @keyframes fade { from{opacity:0} to{opacity:1} }
-  .result-card { width:100%; max-width:330px; aspect-ratio:512/720;
+  .result-card { position:relative; width:100%; max-width:330px; aspect-ratio:512/720;
     background:url(../assets/ui/card_frame.webp) center/100% 100% no-repeat;
-    border:none; border-radius:0; box-shadow:none; text-align:center;
-    padding:15% 15% 13%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
-  .result-card .eyebrow { font-size:16px; color:#8a5a24; font-weight:700; letter-spacing:2px; }
-  .result-card .icon { font-size:56px; margin:2px 0 0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
-  .result-card .name { font-size:27px; font-weight:700; color:var(--ink); margin-bottom:1px; line-height:1.1; }
-  .result-card .meta { font-size:16px; color:var(--ink2); margin-bottom:8px; }
-  .rarity-badge { display:inline-flex; align-items:center; justify-content:center; min-width:96px; height:34px;
-    font-size:15px; font-weight:700; letter-spacing:.5px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);
-    background-repeat:no-repeat; background-position:center; background-size:100% 100%; margin-bottom:8px; }
-  .result-card button { width:80%; background:url(../assets/ui/btn_paper.webp) center/100% 100% no-repeat;
-    color:var(--ink); border:none; padding:12px 10px 14px; font-size:19px; font-weight:700; cursor:pointer;
+    border:none; border-radius:0; box-shadow:none; text-align:center; }
+  /* 폴라로이드 사진창(카드프레임의 흰 창)에 내용을 딱 맞춰 중앙 정렬 */
+  .rc-photo { position:absolute; left:18.5%; right:23%; top:22.5%; bottom:25%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+  .rc-photo .eyebrow { font-size:15px; color:#8a5a24; font-weight:700; letter-spacing:1px; }
+  .rc-photo .icon { font-size:44px; line-height:1; margin:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+  .rc-photo .name { font-size:22px; font-weight:700; color:var(--ink); margin:0; line-height:1.15;
+    max-width:100%; word-break:keep-all; }              /* 한글 단어 단위 줄바꿈(글자별 X) */
+  .rc-photo .meta { font-size:13px; color:var(--ink2); margin:0; line-height:1.2; }
+  .rarity-badge { display:inline-flex; align-items:center; justify-content:center; min-width:86px; height:30px;
+    font-size:14px; font-weight:700; letter-spacing:.5px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);
+    background-repeat:no-repeat; background-position:center; background-size:100% 100%; margin:1px 0; }
+  /* 캐러셀 내비: ‹ ●○○ › 한 줄(내용 아래) — 이름 칸을 좁히지 않음 */
+  .rc-nav { display:flex; align-items:center; justify-content:center; gap:8px; min-height:22px; margin-top:1px; }
+  .rc-nav.hide { visibility:hidden; }
+  .rc-arrow { width:26px; height:26px; padding:0; border:none; background:none; font-family:serif;
+    font-size:28px; line-height:1; color:#8a5a24; cursor:pointer; opacity:.9; text-shadow:0 1px 0 rgba(255,247,224,.6); }
+  .rc-arrow:active { transform:scale(.88); }
+  .rc-dots { display:inline-flex; align-items:center; gap:6px; }
+  .rc-dots i { width:7px; height:7px; border-radius:50%; background:#c9a97a; display:inline-block; transition:transform .15s; }
+  .rc-dots i.on { background:#8a5a24; transform:scale(1.35); }
+  .result-card #r-ok { position:absolute; left:50%; bottom:7.5%; transform:translateX(-50%);
+    width:66%; background:url(../assets/ui/btn_paper.webp) center/100% 100% no-repeat;
+    color:var(--ink); border:none; padding:11px 10px 13px; font-size:18px; font-weight:700; cursor:pointer;
     font-family:var(--fh); text-shadow:0 1px 0 rgba(255,247,224,.5); }
-  .result-card button:active { transform:translateY(2px); }
+  .result-card #r-ok:active { transform:translateX(-50%) translateY(2px); }
 
   /* 도감 화면 */
   #collection { position:fixed; inset:0; z-index:3000; display:none; flex-direction:column;
@@ -200,11 +213,18 @@
 
 <div id="result">
   <div class="result-card">
-    <div class="eyebrow">발굴 성공</div>
-    <div class="icon" id="r-icon">🦴</div>
-    <div class="name" id="r-name">화석</div>
-    <div class="rarity-badge" id="r-rarity">COMMON</div>
-    <div class="meta" id="r-meta"></div>
+    <div class="rc-photo">
+      <div class="eyebrow" id="r-eyebrow">발굴 성공</div>
+      <div class="icon" id="r-icon">🦴</div>
+      <div class="name" id="r-name">화석</div>
+      <div class="rarity-badge" id="r-rarity">흔함</div>
+      <div class="meta" id="r-meta"></div>
+      <div class="rc-nav" id="rc-nav">
+        <button class="rc-arrow" id="rc-prev" aria-label="이전">‹</button>
+        <span class="rc-dots" id="rc-dots"></span>
+        <button class="rc-arrow" id="rc-next" aria-label="다음">›</button>
+      </div>
+    </div>
     <button id="r-ok">도감에 수집!</button>
   </div>
 </div>
@@ -681,20 +701,20 @@
       name: payload.name || (activeSpot && activeSpot.item.name) || payload.obj || "화석",
       rarity: payload.rarity || (activeSpot && activeSpot.item.rarity) || "common"
     }];
-    let primary = null, primaryRec = null;
-    list.forEach((o, i) => {
+    // 각 물건을 도감에 기록(단일 초크포인트) + 캐러셀 카드 구성
+    const cards = list.map((o) => {
       const it = { obj: o.obj, name: o.name || o.obj, rarity: o.rarity || "common", region: region, era: null };
-      const rec = onDiscover(it);        // 각 물건 도감 기록 (단일 초크포인트)
-      if (i === 0) { primary = it; primaryRec = rec; }
+      const rec = onDiscover(it);
+      return { obj: it.obj, name: it.name, rarity: it.rarity, region: region, qty: rec.qty };
     });
 
     // 그 지점 소모 (제거 + 쿨다운 후 재스폰)
     consumeSpot(activeSpot);
     activeSpot = null;
 
-    // 발굴 오버레이 닫고 결과 표시
+    // 발굴 오버레이 닫고 결과(캐러셀) 표시
     closeDig();
-    showResult(primary, primaryRec.qty, list.length);
+    showResult(cards);
   }
 
   window.addEventListener("message", (e) => {
@@ -705,18 +725,41 @@
   // ==========================================================================
   // 발견 결과 카드
   // ==========================================================================
-  function showResult(item, qty, count) {
+  // 결과 캐러셀: 발굴한 N개를 ‹ › 화살표로 넘겨보고, "도감에 수집!" 한 번으로 모두 수집(이미 기록됨).
+  let _rcCards = [], _rcIdx = 0;
+  function renderResultCard() {
+    const n = _rcCards.length; if (!n) return;
+    if (_rcIdx < 0) _rcIdx = 0; if (_rcIdx > n - 1) _rcIdx = n - 1;
+    const item = _rcCards[_rcIdx];
+    document.getElementById("r-eyebrow").textContent = n > 1 ? ("🎉 " + n + "개 발굴!") : "발굴 성공";
     document.getElementById("r-icon").textContent = iconFor(item);
-    document.getElementById("r-name").textContent = item.name + ((count && count > 1) ? "  외 " + (count - 1) + "개" : "");
+    document.getElementById("r-name").textContent = item.name;
     const rb = document.getElementById("r-rarity");
     rb.textContent = RARITY_KR[item.rarity] || "흔함";
     rb.style.backgroundImage = "url(" + badgeUrl(item.rarity) + ")";
     rb.style.color = "#fff";
     const regLabel = (REGIONS && REGIONS.regions[item.region] && REGIONS.regions[item.region].label) || curRegionMeta.label;
-    document.getElementById("r-meta").textContent =
-      ((count && count > 1) ? "🎉 " + count + "개 발굴! · " : "") + regLabel + (qty>1 ? "  ·  보유 "+qty : "");
+    document.getElementById("r-meta").textContent = regLabel + (item.qty > 1 ? "  ·  보유 " + item.qty : "");
+    // 내비(화살표+점) — 1개면 통째로 숨김
+    const multi = n > 1;
+    document.getElementById("rc-nav").classList.toggle("hide", !multi);
+    const dots = document.getElementById("rc-dots");
+    dots.innerHTML = "";
+    if (multi) for (let i = 0; i < n; i++) { const d = document.createElement("i"); if (i === _rcIdx) d.className = "on"; dots.appendChild(d); }
+  }
+  function showResult(cards) {
+    _rcCards = (cards && cards.length) ? cards : [{ obj: "fossil", name: "화석", rarity: "common", region: curRegionKey, qty: 1 }];
+    _rcIdx = 0;
+    renderResultCard();
     document.getElementById("result").classList.add("show");
   }
+  function rcStep(delta) {
+    const n = _rcCards.length; if (n < 2) return;
+    _rcIdx = (_rcIdx + delta + n) % n;
+    renderResultCard();
+  }
+  document.getElementById("rc-prev").addEventListener("click", () => rcStep(-1));
+  document.getElementById("rc-next").addEventListener("click", () => rcStep(1));
   document.getElementById("r-ok").addEventListener("click", () => {
     document.getElementById("result").classList.remove("show");
   });

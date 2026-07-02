@@ -308,65 +308,54 @@
   // 발굴 대상 매설 위치(월드 XZ). 매 발굴마다 제각각 → 찾는 재미(사용자 2026-07-01).
   //  footprint(R)가 필드 안에 들어오도록 마진 두고 랜덤. buildObjTop이 갱신, 모델/리셋이 참조.
   let objCX = 0, objCZ = 0;
-  //  발굴률 = 이 풋프린트(타원) 위 흙 제거율. 실제 모델 크기에 맞춰(작은 물건=작은 영역) → 물건만
-  //  다 드러내면 100%(사용자 2026-07-02: "전체 땅 기준으로 측정돼 헷갈림" 수정). 모델 로드 후 실측.
-  let objRX = OBJ_FOOTPRINT_R, objRZ = OBJ_FOOTPRINT_R;   // 현재 풋프린트 반경(월드)
-  let objModelRX = 0, objModelRZ = 0;                     // 모델 실측 반경(로드 후 세팅, reset도 참조)
+  //  발굴률 = '오브젝트별 풋프린트'(각 물건 크기) 위 흙 제거율. 여러 개면 각 물건이 자기 영역을 갖고,
+  //  자기 셀을 다 파면 그 물건만 솟아오른다(사용자 2026-07-02: 개별 관리). 전부 파면 팝업.
+  let objParts = [];                       // [{ spec, ox,oz, cx,cz, rx,rz, lay, groundY, cellCount, revealed, risen, rise }]
+  let objCellOwner = new Int16Array(N);    // 셀→오브젝트 index (-1=없음)
+  objCellOwner.fill(-1);
   function randomizeObjPos() {
-    const rr = Math.max(objModelRX || OBJ_FOOTPRINT_R, objModelRZ || OBJ_FOOTPRINT_R);
+    const rr = OBJ_FOOTPRINT_R;            // 클러스터 전체가 필드 안에 들어오게 넉넉히
     const mx = Math.max(0, WORLD_W / 2 - rr - 0.6);
     const mz = Math.max(0, WORLD_H / 2 - rr - 0.6);
     objCX = (Math.random() * 2 - 1) * mx;
     objCZ = (Math.random() * 2 - 1) * mz;
   }
-  // 타원 풋프린트(objCX,objCZ 중심 · objRX,objRZ 반경) → objTop/isObj/totalObjCols
-  function computeFootprint() {
-    objTop.fill(0);
-    totalObjCols = 0;
+  // 오브젝트별 풋프린트 파티션: 각 셀을 '가장 안쪽에 든' 오브젝트(타원 dd 최소, ≤1)에 배정.
+  function partitionFootprint() {
+    objTop.fill(0); isObj.fill(0); totalObjCols = 0;
+    objCellOwner.fill(-1);
+    for (const p of objParts) p.cellCount = 0;
+    if (!objParts.length) return;
     const peak = OBJ_BED_PEAK * START_DEPTH;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const i = r * COLS + c;
         const x = (c / (COLS - 1) - 0.5) * WORLD_W;
         const z = (r / (ROWS - 1) - 0.5) * WORLD_H;
-        const nx = (x - objCX) / objRX, nz = (z - objCZ) / objRZ;
-        const dd = Math.sqrt(nx * nx + nz * nz);     // 0 중심 .. 1 가장자리
-        const m = smooth01((1 - dd) / 0.30);         // 소프트 가장자리
-        const top = peak * m;
-        objTop[i] = top;
-        isObj[i] = top > OBJ_MIN ? 1 : 0;
-        if (isObj[i]) totalObjCols++;
+        let best = -1, bestDD = 1e9;
+        for (let k = 0; k < objParts.length; k++) {
+          const p = objParts[k];
+          const nx = (x - p.cx) / p.rx, nz = (z - p.cz) / p.rz;
+          const dd = Math.sqrt(nx * nx + nz * nz);
+          if (dd < bestDD) { bestDD = dd; best = k; }
+        }
+        if (best >= 0 && bestDD <= 1.0) {
+          const m = smooth01((1 - bestDD) / 0.30);
+          const top = peak * m;
+          if (top > OBJ_MIN) { objTop[i] = top; isObj[i] = 1; objCellOwner[i] = best; objParts[best].cellCount++; totalObjCols++; }
+        }
       }
     }
   }
   function buildObjTop() {
     randomizeObjPos();
-    objRX = objModelRX > 0 ? objModelRX : OBJ_FOOTPRINT_R;   // 모델 실측이 있으면 물건 크기 기준
-    objRZ = objModelRZ > 0 ? objModelRZ : OBJ_FOOTPRINT_R;
-    computeFootprint();
-  }
-  // 모델 로드 후: 실제 모델 XZ 반경으로 풋프린트 재계산(발굴률이 물건 크기에 맞게).
-  function applyModelFootprint(lay) {
-    let hx = 0, hz = 0;
-    try {
-      const b = new THREE.Box3().setFromObject(lay);
-      if (isFinite(b.min.x) && isFinite(b.max.x)) {
-        hx = (b.max.x - b.min.x) / 2; hz = (b.max.z - b.min.z) / 2;
-      }
-    } catch (e) {}
-    const clamp = (v) => Math.max(1.7, Math.min(OBJ_FOOTPRINT_R, v || OBJ_FOOTPRINT_R));
-    objModelRX = clamp(hx * 1.25);   // 약간 여유(주변도 조금 파게)
-    objModelRZ = clamp(hz * 1.25);
-    objRX = objModelRX; objRZ = objModelRZ;
-    computeFootprint();
-    fullSync();
-    updateHUD();
+    for (const p of objParts) { p.cx = objCX + p.ox; p.cz = objCZ + p.oz; }   // 리셋 시 새 위치로 재배치
+    partitionFootprint();
   }
 
-  // ── 발굴 대상 실물 3D 모델: 흙 아래 배치 → 파내며 드러남 → 100%면 상승(rise) ──
+  // ── 발굴 대상 실물 3D 모델: 흙 아래 배치 → 파내며 드러남 → 자기 셀 다 파면 그 물건만 상승(rise) ──
+  //  상승 트윈은 오브젝트별 part.rise({t,dur,fromY,toY})로 관리(objParts). objGroup은 클러스터 부모.
   let objGroup = null, objMixer = null, objModelReady = false;
-  let objRise = null;      // {t,dur,fromY,toY}  상승 트윈
-  let objSpin = false;     // 상승 후 천천히 회전(전시)
   const OBJ_RISE_Y = HEIGHT_SCALE * START_DEPTH + 1.2;   // 지면 위로 솟는 목표 높이(월드 Y)
 
   // 모델 실제 bbox: 스키닝 메시는 bind-pose가 렌더와 달라(예: T-Rex) boneTransform으로 실제
@@ -395,7 +384,7 @@
 
   // 한 개 모델을 로드해 lay 그룹으로 감싸(눕히기·매립캡·접지) objGroup의 (ox,oz) 위치에 배치.
   //  sizeScale: 다중 오브젝트일 때 각 물건을 작게(클러스터로 함께 묻힘).
-  function loadOneModel(spec, ox, oz, sizeScale, onDone) {
+  function loadOneModel(spec, part, sizeScale, onDone) {
     const key = resolveObjKey(spec.obj);
     const cfg = MODEL_CFG[key] || { file: key + ".glb" };
     new THREE.GLTFLoader().load(MODEL_BASE + cfg.file, function (gltf) {
@@ -467,38 +456,51 @@
           if (laidH > ceil) { lay.scale.setScalar(ceil / laidH); lb = new THREE.Box3().setFromObject(lay); }
           groundY = isFinite(lb.min.y) ? -lb.min.y : 0;
         }
-        lay.position.set(ox, groundY, oz);   // 클러스터 오프셋 + 바닥 접지
+        lay.position.set(part.ox, groundY, part.oz);   // 클러스터 오프셋 + 바닥 접지
         if (objGroup) objGroup.add(lay);
         if (cfg.animate && gltf.animations && gltf.animations.length && !objMixer) {
           objMixer = new THREE.AnimationMixer(model);
           objMixer.clipAction(gltf.animations[0]).play();
         }
+        // 개별 관리용 기록: lay·바닥높이·자기 풋프린트 반경(모델 실측 XZ, 여유 1.3배)
+        part.lay = lay; part.groundY = groundY;
+        part.cx = objCX + part.ox; part.cz = objCZ + part.oz;
+        let hx = 0, hz = 0;
+        try { const pb = new THREE.Box3().setFromObject(lay);
+          if (isFinite(pb.min.x) && isFinite(pb.max.x)) { hx = (pb.max.x - pb.min.x) / 2; hz = (pb.max.z - pb.min.z) / 2; } } catch (e) {}
+        const clampR = (v) => Math.max(1.5, Math.min(OBJ_FOOTPRINT_R, v || OBJ_FOOTPRINT_R));
+        part.rx = clampR(hx * 1.3); part.rz = clampR(hz * 1.3);
       } catch (e) { try { console.warn("obj model place fail", key, e); } catch(_){} }
       onDone();
     }, undefined, function (err) { try { console.warn("obj model load fail", key, err); } catch(e){} onDone(); });
   }
 
-  // 발굴 대상 = ENCOUNTER.objs (1~N개). 모두 한 objGroup 아래 클러스터로 묻고, 로드 완료 후 union 풋프린트.
+  // 발굴 대상 = ENCOUNTER.objs (1~N개). 한 objGroup 아래 클러스터로 묻되, 각 물건이 자기 lay·풋프린트를 갖는다.
   function loadObjModel() {
     if (typeof THREE.GLTFLoader === "undefined") return;
     const specs = ENCOUNTER.objs && ENCOUNTER.objs.length ? ENCOUNTER.objs : [{ obj: STAGE.object.type }];
-    const N = specs.length;
+    const Ncount = specs.length;
     window.__objKey = resolveObjKey(specs[0].obj);
-    window.__objCount = N;
+    window.__objCount = Ncount;
     const grp = new THREE.Group();
     grp.position.set(objCX, OBJ_BASE_Y, objCZ);   // 매설 위치(제각각)
     scene.add(grp);
     objGroup = grp;
-    const sizeScale = N > 1 ? 0.6 : 1.0;                       // 여럿이면 각각 작게(함께 들어가게)
-    const clusterR = N > 1 ? OBJ_FOOTPRINT_R * 0.34 : 0;       // 클러스터 반경
-    let loaded = 0;
-    specs.forEach(function (spec, i) {
-      const ang = (i / N) * Math.PI * 2 + 0.6;
+    const sizeScale = Ncount > 1 ? 0.6 : 1.0;                    // 여럿이면 각각 작게(함께 들어가게)
+    const clusterR = Ncount > 1 ? OBJ_FOOTPRINT_R * 0.46 : 0;    // 클러스터 반경(서로 안 겹치게 넉넉히)
+    objParts = specs.map(function (spec, i) {
+      const ang = (i / Ncount) * Math.PI * 2 + 0.6;
       const ox = Math.cos(ang) * clusterR, oz = Math.sin(ang) * clusterR;
-      loadOneModel(spec, ox, oz, sizeScale, function () {
+      return { spec: spec, ox: ox, oz: oz, cx: objCX + ox, cz: objCZ + oz,
+               rx: 2, rz: 2, lay: null, groundY: 0, cellCount: 0, revealed: 0, risen: false, rise: null };
+    });
+    let loaded = 0;
+    objParts.forEach(function (part) {
+      loadOneModel(part.spec, part, sizeScale, function () {
         loaded++;
-        if (loaded >= N) {
-          applyModelFootprint(grp);   // 클러스터 전체(union)로 발굴 영역 → 모두 드러내야 100%
+        if (loaded >= Ncount) {
+          partitionFootprint();       // 오브젝트별 발굴 영역(각 물건이 자기 셀을 다 파야 솟음)
+          fullSync(); updateHUD();
           objModelReady = true;
           window.__objModelReady = true;
         }
@@ -506,22 +508,24 @@
     });
   }
 
-  // 100% 클리어 시: 모델을 땅 밖으로 끌어올린다(easeOut) + 이후 천천히 회전.
-  function startObjRise() {
-    if (!objGroup) return;
-    objRise = { t: 0, dur: 0.9, fromY: objGroup.position.y, toY: OBJ_RISE_Y };
-    objSpin = true;
+  // 한 오브젝트만 땅 밖으로 끌어올린다(easeOut). 여러 개면 각자 자기 셀 발굴 완료 시 개별 상승.
+  function riseOnePart(p) {
+    p.risen = true;
+    if (!p.lay) return;
+    p.rise = { t: 0, dur: 0.7, fromY: p.lay.position.y, toY: OBJ_RISE_Y - OBJ_BASE_Y };
+    if (navigator.vibrate) { try { navigator.vibrate(18); } catch (e) {} }
   }
   function updateObjAnim(dt) {
     if (objMixer) objMixer.update(dt);
-    if (objRise && objGroup) {
-      objRise.t += dt;
-      const k = Math.min(1, objRise.t / objRise.dur);
-      const e = 1 - Math.pow(1 - k, 3);           // easeOutCubic
-      objGroup.position.y = objRise.fromY + (objRise.toY - objRise.fromY) * e;
-      if (k >= 1) objRise = null;
+    for (const p of objParts) {
+      if (p.rise && p.lay) {
+        p.rise.t += dt;
+        const k = Math.min(1, p.rise.t / p.rise.dur);
+        const e = 1 - Math.pow(1 - k, 3);           // easeOutCubic
+        p.lay.position.y = p.rise.fromY + (p.rise.toY - p.rise.fromY) * e;
+        if (k >= 1) p.rise = null;
+      }
     }
-    if (objSpin && objGroup) objGroup.rotation.y += dt * 0.7;
   }
 
   // ============================================================
@@ -932,9 +936,14 @@
   let cleared = false;
   function computeState() {
     let revealed = 0;
+    for (const p of objParts) p.revealed = 0;
     for (let i = 0; i < N; i++) {
       if (!isObj[i]) continue;
-      if (soilTop[i] <= objTop[i] + TOL) revealed++;   // 손상 개념 없음 → 노출 여부만
+      if (soilTop[i] <= objTop[i] + TOL) {          // 손상 개념 없음 → 노출 여부만
+        revealed++;
+        const o = objCellOwner[i];
+        if (o >= 0 && objParts[o]) objParts[o].revealed++;
+      }
     }
     const revealFrac = totalObjCols ? revealed / totalObjCols : 0;
     return { revealed, revealFrac };
@@ -946,10 +955,17 @@
     document.getElementById("reveal-fill").style.width = (st.revealFrac * 100).toFixed(1) + "%";
     document.getElementById("reveal-val").textContent = pct + "%";
 
-    // 클리어 판정: '표시값(반올림)이 100%면' 클리어. 표시 100% ↔ 실제 revealFrac(≈0.995~1.0)의
-    // 반올림 간극 때문에 "100% 표시인데 종료 안 됨" 버그(2026-07-01)를 없앤다. finishClear가
-    // 남은 흙 필름을 objTop까지 완전히 걷어 깨끗이 노출한 뒤 CLEAR로 이어지므로 조기 종료감 없음.
-    if (!cleared && pct >= 100) {
+    // 개별 오브젝트: 자기 셀을 (거의) 다 파면 그 물건만 스스로 솟아오름 — 팝업 없음(사용자 2026-07-02).
+    //  1셀 톨러런스: 소프트 가장자리 셀 하나가 남아 안 솟는 걸 방지.
+    for (const p of objParts) {
+      if (!p.risen && p.cellCount > 0 && p.revealed >= p.cellCount - 1) riseOnePart(p);
+    }
+
+    // 클리어 판정: 오브젝트가 있으면 '전부 솟았을 때'(=모두 발굴) 팝업. 로드 전 폴백은 표시값 100%.
+    //  표시 100% ↔ 실제 revealFrac(≈0.995~1.0) 반올림 간극(2026-07-01 버그) 없이, finishClear가
+    //  남은 흙 필름을 objTop까지 걷어 깨끗이 노출한다.
+    const allRisen = objParts.length > 0 && objParts.every(function (p) { return p.risen; });
+    if (!cleared && (allRisen || (objParts.length === 0 && pct >= 100))) {
       cleared = true; finishClear();
     }
     return st;
@@ -975,10 +991,10 @@
     for (let i = 0; i < N; i++) { if (isObj[i] && soilTop[i] > objTop[i]) soilTop[i] = objTop[i]; }
     fullSync();          // 마지막 흙 필름 제거된 깨끗한 표면으로 리페인트
     triggerWinShine();   // 발굴 완료 반짝
-    startObjRise();      // 발굴 대상 모델이 땅 밖으로 솟아오름(사용자 요청 연출)
+    for (const p of objParts) { if (!p.risen) riseOnePart(p); }   // 아직 안 솟은 물건은 마저 솟게(안전)
     document.getElementById("reveal-fill").style.width = "100%";
     document.getElementById("reveal-val").textContent = "100%";
-    setTimeout(function(){ showOverlay(); }, 1150);   // 상승 연출(≈0.9s) 본 뒤 마무리
+    setTimeout(function(){ showOverlay(); }, 1050);   // 상승 연출 본 뒤 팝업(map #result 캐러셀)
   }
 
   // 클리어 전용 오버레이 (fail 없음 — 손상/실패 기믹 제거).
@@ -1273,9 +1289,9 @@
       pool.mesh.instanceMatrix.needsUpdate = true;
     });
     fullSync();
-    // 발굴 대상 모델 원위치(흙 아래) + 상승/회전 리셋
-    objRise = null; objSpin = false;
+    // 발굴 대상 모델 원위치(흙 아래) + 각 물건 미상승 상태로 리셋
     if (objGroup) { objGroup.position.set(objCX, OBJ_BASE_Y, objCZ); objGroup.rotation.set(0, 0, 0); }
+    for (const p of objParts) { p.risen = false; p.rise = null; if (p.lay) p.lay.position.y = p.groundY; }
     document.getElementById("overlay").className = "";
     setTool(STAGE.tools[0]);
     updateHUD();
@@ -1330,11 +1346,15 @@
       // 발굴 대상 3D 모델/상승 검증
       objKey: () => window.__objKey || null,
       objModelReady: () => !!objModelReady,
-      objY: () => objGroup ? objGroup.position.y : null,
+      objY: () => (objParts[0] && objParts[0].lay) ? objParts[0].lay.position.y + OBJ_BASE_Y : (objGroup ? objGroup.position.y : null),
       objBaseY: () => OBJ_BASE_Y,
       objRiseTargetY: () => OBJ_RISE_Y,
-      objRisen: () => !!objGroup && objGroup.position.y > (OBJ_BASE_Y + (OBJ_RISE_Y - OBJ_BASE_Y) * 0.8),
-      objSpinning: () => !!objSpin,
+      objCount: () => objParts.length,
+      risenCount: () => objParts.filter(function (p) { return p.risen; }).length,
+      partRisen: () => objParts.map(function (p) { return !!p.risen; }),
+      partCells: () => objParts.map(function (p) { return { cells: p.cellCount, revealed: p.revealed }; }),
+      // 모든 물건이 솟았는가(=전부 발굴 → 팝업 조건)
+      objRisen: () => objParts.length > 0 && objParts.every(function (p) { return p.risen; }),
       // 층 경계 (검증/드라이버용). soilAbove 밴드 → 도구.
       layers: () => ({ FINE_TOP, MID_TOP, startDepth: START_DEPTH }),
       // (nx,ny) 셀이 오브젝트 위인지
@@ -1381,6 +1401,17 @@
         const arr = [];
         for (let i = 0; i < N; i++) {
           if (isObj[i]) {
+            const r = (i / COLS) | 0, c = i % COLS;
+            arr.push([c / (COLS - 1), r / (ROWS - 1)]);
+          }
+        }
+        return arr;
+      },
+      // 특정 오브젝트(part index)가 소유한 셀들만 (개별 발굴 검증용)
+      ownerCellsNorm: (k) => {
+        const arr = [];
+        for (let i = 0; i < N; i++) {
+          if (objCellOwner[i] === k) {
             const r = (i / COLS) | 0, c = i % COLS;
             arr.push([c / (COLS - 1), r / (ROWS - 1)]);
           }
