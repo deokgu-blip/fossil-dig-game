@@ -36,35 +36,37 @@
     display:flex; align-items:center; gap:6px; backdrop-filter:blur(4px); }
   #region-chip .flag { font-size:16px; }
   .spacer { flex:1; }
-  .icon-btn { pointer-events:auto; width:44px; height:44px; border-radius:14px;
-    background:rgba(30,20,12,.82); border:1px solid var(--line); color:var(--cream);
-    font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-    backdrop-filter:blur(4px); }
+  .icon-btn { pointer-events:auto; width:48px; height:48px; border:none; color:transparent;
+    background-color:transparent; background-repeat:no-repeat; background-position:center;
+    background-size:contain; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,.45)); font-size:0; }
   .icon-btn:active { transform:scale(.92); }
+  #btn-locate { background-image:url(../assets/ui/icon_locate.webp); }
+  #btn-collection { background-image:url(../assets/ui/icon_collection.webp); }
 
   /* 발굴 지점 마커 (기운 3D 지도 위에 upright) */
   .spot-marker { pointer-events:auto; cursor:pointer; will-change:transform;
     width:34px; height:44px; display:flex; align-items:flex-end; justify-content:center; }
-  .spot-marker .pin { width:30px; height:30px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
-    border:2px solid rgba(255,255,255,.88); box-shadow:0 3px 8px rgba(0,0,0,.55);
-    display:flex; align-items:center; justify-content:center; }
-  .spot-marker .pin > span { transform:rotate(45deg); font-size:15px; line-height:1; }
-  .spot-marker.pulsing .pin { animation:spinPulse 1.6s ease-in-out infinite; }
-  @keyframes spinPulse { 0%,100%{ box-shadow:0 3px 8px rgba(0,0,0,.55);} 50%{ box-shadow:0 3px 16px rgba(240,198,116,.9);} }
+  .spot-marker .pin { position:relative; width:36px; height:44px; background:url(../assets/ui/pin_dig.webp) center/contain no-repeat;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.5)); display:flex; align-items:center; justify-content:center; }
+  .spot-marker .pin > span { display:none; }
+  .spot-marker .pin .rdot { position:absolute; top:1px; left:50%; transform:translateX(-50%);
+    width:9px; height:9px; border-radius:50%; border:1.5px solid rgba(255,255,255,.9); box-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .spot-marker.pulsing .pin { transform-origin:50% 100%; animation:spinPulse 1.5s ease-in-out infinite; }
+  @keyframes spinPulse { 0%,100%{ transform:scale(1) translateY(0);} 50%{ transform:scale(1.12) translateY(-2px);} }
 
   /* 하단 발견 버튼 */
   #discover-bar { position:fixed; left:0; right:0; bottom:0; z-index:1000;
     padding:14px 18px calc(env(safe-area-inset-bottom,0px) + 18px);
     display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;
     background:linear-gradient(0deg,rgba(20,14,8,.85),rgba(20,14,8,0)); }
-  #discover-btn { pointer-events:auto; width:100%; max-width:420px;
-    background:linear-gradient(180deg,#ffd884,#f0a030); color:#3a2408; border:none;
-    border-radius:18px; padding:16px; font-size:19px; font-weight:800; letter-spacing:.3px;
-    cursor:pointer; box-shadow:0 8px 24px rgba(240,160,48,.45); display:none;
+  #discover-btn { pointer-events:auto; width:100%; max-width:400px; aspect-ratio:512/224;
+    background:url(../assets/ui/btn_discover.webp) center/100% 100% no-repeat; color:#5a3410; border:none;
+    padding:0 0 6px; font-size:22px; font-weight:900; letter-spacing:.3px;
+    text-shadow:0 1px 0 rgba(255,240,205,.7); cursor:pointer; box-shadow:none; display:none;
     align-items:center; justify-content:center; gap:8px; }
-  #discover-btn.show { display:flex; animation:pulse 1.4s ease-in-out infinite; }
-  #discover-btn:active { transform:scale(.97); }
-  @keyframes pulse { 0%,100%{ box-shadow:0 8px 24px rgba(240,160,48,.45);} 50%{ box-shadow:0 8px 34px rgba(240,160,48,.85);} }
+  #discover-btn.show { display:flex; animation:pulse 1.3s ease-in-out infinite; }
+  #discover-btn:active { transform:scale(.96); }
+  @keyframes pulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.045);} }
   #hint { pointer-events:none; font-size:12.5px; color:var(--sub); background:rgba(20,14,8,.6);
     padding:5px 12px; border-radius:12px; text-align:center; max-width:90%; }
 
@@ -86,36 +88,42 @@
   #dig-overlay { position:fixed; inset:0; z-index:2000; display:none; background:#1a130c; }
   #dig-overlay.show { display:block; }
   #dig-frame { width:100%; height:100%; border:0; display:block; }
-  #dig-close { position:fixed; top:calc(env(safe-area-inset-top,0px) + 10px); left:12px; z-index:2100;
-    width:40px; height:40px; border-radius:12px; background:rgba(20,14,8,.7); color:#fff; border:1px solid var(--line);
-    font-size:20px; cursor:pointer; display:none; }
-  #dig-overlay.show #dig-close { display:block; }
+  #dig-close { position:fixed; top:calc(env(safe-area-inset-top,0px) + 74px); left:12px; z-index:2100;
+    height:40px; padding:0 16px; border-radius:20px; background:linear-gradient(180deg,#5a4026,#3a2818);
+    color:#ffe9c8; border:2px solid #7a5a34; box-shadow:0 3px 10px rgba(0,0,0,.5);
+    font-size:15px; font-weight:800; letter-spacing:.3px; cursor:pointer; display:none;
+    align-items:center; gap:6px; }
+  #dig-overlay.show #dig-close { display:inline-flex; }
+  #dig-close:active { transform:scale(.95); }
 
   /* 발견 결과 토스트 */
   #result { position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
     background:rgba(10,7,4,.78); backdrop-filter:blur(4px); padding:26px; }
   #result.show { display:flex; animation:fade .35s ease; }
   @keyframes fade { from{opacity:0} to{opacity:1} }
-  .result-card { width:100%; max-width:360px; background:linear-gradient(180deg,#3a2a1b,#26190f);
-    border:1px solid var(--line); border-radius:22px; padding:26px 22px; text-align:center;
-    box-shadow:0 20px 60px rgba(0,0,0,.6); }
-  .result-card .eyebrow { font-size:13px; color:var(--gold); font-weight:800; letter-spacing:2px; }
-  .result-card .icon { font-size:64px; margin:12px 0 6px; }
-  .result-card .name { font-size:23px; font-weight:800; margin-bottom:4px; }
-  .result-card .meta { font-size:13.5px; color:var(--sub); margin-bottom:16px; }
-  .rarity-badge { display:inline-block; font-size:12px; font-weight:800; letter-spacing:.5px;
-    padding:4px 12px; border-radius:20px; margin-bottom:16px; }
-  .result-card button { width:100%; background:var(--gold); color:#3a2408; border:none; border-radius:14px;
-    padding:14px; font-size:16px; font-weight:800; cursor:pointer; }
-  .result-card button:active { transform:scale(.97); }
+  .result-card { width:100%; max-width:330px; aspect-ratio:512/720;
+    background:url(../assets/ui/card_frame.webp) center/100% 100% no-repeat;
+    border:none; border-radius:0; box-shadow:none; text-align:center;
+    padding:15% 15% 13%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .result-card .eyebrow { font-size:12px; color:#9a6a2a; font-weight:900; letter-spacing:2px; }
+  .result-card .icon { font-size:58px; margin:4px 0 2px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+  .result-card .name { font-size:21px; font-weight:900; color:#4a3018; margin-bottom:2px; }
+  .result-card .meta { font-size:12.5px; color:#7a5a38; margin-bottom:10px; }
+  .rarity-badge { display:inline-flex; align-items:center; justify-content:center; min-width:96px; height:34px;
+    font-size:12px; font-weight:900; letter-spacing:.5px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);
+    background-repeat:no-repeat; background-position:center; background-size:100% 100%; margin-bottom:12px; }
+  .result-card button { width:82%; background:linear-gradient(180deg,#ffd884,#f0a030); color:#5a3410; border:none; border-radius:13px;
+    padding:12px; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 3px 0 #c47f1e; }
+  .result-card button:active { transform:translateY(2px); box-shadow:0 1px 0 #c47f1e; }
 
   /* 도감 화면 */
   #collection { position:fixed; inset:0; z-index:3000; display:none; flex-direction:column;
-    background:var(--bg); }
+    background:url(../assets/ui/panel_collection.webp) center/cover no-repeat, #2a1d12; }
   #collection.show { display:flex; }
-  #col-head { padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px; display:flex; align-items:center; gap:12px;
-    border-bottom:1px solid var(--line); background:var(--panel); }
+  #col-head { padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px; display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid rgba(0,0,0,.25); background:rgba(26,17,10,.55); backdrop-filter:blur(3px); }
   #col-head h1 { font-size:19px; font-weight:800; }
+  #col-head .col-logo { height:40px; }
   #col-head .count { margin-left:auto; font-size:13px; color:var(--sub); }
   #col-back { width:40px; height:40px; border-radius:12px; background:var(--panel2); color:var(--cream);
     border:1px solid var(--line); font-size:20px; cursor:pointer; }
@@ -131,8 +139,10 @@
   .col-card .cc-region { font-size:11px; color:var(--sub); margin-top:3px; }
   .col-card .cc-qty { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.4); border-radius:10px;
     font-size:11px; font-weight:800; padding:2px 7px; }
-  .col-card .cc-rarity { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.4px;
-    padding:2px 8px; border-radius:10px; margin-top:6px; }
+  .col-card { background:rgba(38,25,14,.82); }
+  .col-card .cc-rarity { display:inline-flex; align-items:center; justify-content:center; min-width:64px; height:22px;
+    font-size:10px; font-weight:900; letter-spacing:.4px; margin-top:6px; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.6);
+    background-repeat:no-repeat; background-position:center; background-size:100% 100%; }
   /* 3D 에셋 크레딧(CC-BY 저작자 표기) — 라이선스 준수 */
   #col-credits { padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px); border-top:1px solid var(--line);
     color:var(--sub); font-size:10.5px; line-height:1.5; text-align:center; }
@@ -154,8 +164,8 @@
 <div id="topbar">
   <div id="region-chip"><span class="flag">🌍</span><span id="region-name">위치 확인 중…</span></div>
   <div class="spacer"></div>
-  <button class="icon-btn" id="btn-locate" title="내 위치">📍</button>
-  <button class="icon-btn" id="btn-collection" title="도감">📖</button>
+  <button class="icon-btn" id="btn-locate" title="내 위치" aria-label="내 위치"></button>
+  <button class="icon-btn" id="btn-collection" title="도감" aria-label="도감"></button>
 </div>
 
 <div id="mock-badge" class="">MOCK GPS</div>
@@ -171,7 +181,7 @@
 </div>
 
 <div id="dig-overlay">
-  <button id="dig-close">✕</button>
+  <button id="dig-close">✕ 그만두기</button>
   <iframe id="dig-frame" allow="fullscreen"></iframe>
 </div>
 
@@ -189,7 +199,8 @@
 <div id="collection">
   <div id="col-head">
     <button id="col-back">‹</button>
-    <h1>발굴 도감</h1>
+    <img class="col-logo" src="../assets/ui/logo_title.webp" alt="발굴 도감">
+    <h1 style="font-size:16px;">발굴 도감</h1>
     <span class="count" id="col-count"></span>
   </div>
   <div id="col-grid"></div>
@@ -483,6 +494,11 @@
     t.textContent = msg; t.classList.add("show");
     clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), ms||2200);
   }
+  // 희귀도 뱃지 이미지(생성 UI 킷). 티어별 badge_<tier>.webp.
+  function badgeUrl(r) {
+    const t = ["common","uncommon","rare","epic","legendary"].includes(r) ? r : "common";
+    return "../assets/ui/badge_" + t + ".webp";
+  }
   function rarityColor(r) {
     const c = (REGIONS && REGIONS._meta && REGIONS._meta.rarityColors) || REGIONS_FALLBACK._meta.rarityColors;
     return c[r] || "#8a8f98";
@@ -648,9 +664,9 @@
     document.getElementById("r-icon").textContent = iconFor(item);
     document.getElementById("r-name").textContent = item.name;
     const rb = document.getElementById("r-rarity");
-    rb.textContent = RARITY_LABEL[item.rarity] || "COMMON";
-    rb.style.background = rarityColor(item.rarity);
-    rb.style.color = "#1a130c";
+    rb.textContent = RARITY_KR[item.rarity] || "흔함";
+    rb.style.backgroundImage = "url(" + badgeUrl(item.rarity) + ")";
+    rb.style.color = "#fff";
     const regLabel = (REGIONS && REGIONS.regions[item.region] && REGIONS.regions[item.region].label) || curRegionMeta.label;
     document.getElementById("r-meta").textContent =
       (item.era ? item.era + " · " : "") + regLabel + (qty>1 ? "  ·  보유 "+qty : "");
@@ -687,10 +703,10 @@
   // 스폰 지점 (MapLibre DOM 마커 — 기운 지도 위 upright, 값싸고 견고)
   // ==========================================================================
   function makeSpotEl(rarity) {
-    const col = rarityColor(rarity);
     const wrap = document.createElement("div");
     wrap.className = "spot-marker pulsing";
-    wrap.innerHTML = '<div class="pin" style="background:'+col+';"><span>⛏️</span></div>';
+    // 핀은 UI킷 이미지(pin_dig.webp, CSS). 희귀도는 작은 색 점으로만 표시(이미지 배경 유지).
+    wrap.innerHTML = '<div class="pin"><i class="rdot" style="background:'+rarityColor(rarity)+'"></i></div>';
     return wrap;
   }
   function spawnSpotsAround(lat, lng) {
@@ -1523,7 +1539,7 @@
         + '<div class="cc-icon">'+icon+'</div>'
         + '<div class="cc-name">'+item.name+'</div>'
         + regDiv
-        + '<span class="cc-rarity" style="background:'+rc+';color:#1a130c;">'+(RARITY_KR[item.rarity]||"")+'</span>'
+        + '<span class="cc-rarity" style="background-image:url('+badgeUrl(item.rarity)+')">'+(RARITY_KR[item.rarity]||"")+'</span>'
         + '</div>';
     }
     return '<div class="col-card locked">'

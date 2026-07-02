@@ -19,12 +19,16 @@
     pointer-events:none;
     display:flex; flex-direction:column; gap:8px;
   }
-  .bar-wrap { background:rgba(20,14,8,0.55); border-radius:12px; padding:8px 12px; backdrop-filter:blur(4px); }
-  .bar-label { display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:#f3e6cf; letter-spacing:.3px; margin-bottom:5px; }
-  .bar-label .val { font-variant-numeric:tabular-nums; }
-  .bar-track { height:9px; border-radius:6px; background:rgba(0,0,0,0.35); overflow:hidden; }
-  .bar-fill { height:100%; width:0%; border-radius:6px; transition:width .12s linear; }
-  #reveal-fill { background:linear-gradient(90deg,#c9b584,#f0dfae); }
+  /* 캐주얼 나무 패널(생성 프레임 에셋은 얇은 바에 안 맞아 클린 패널로 대체) */
+  .bar-wrap { background:linear-gradient(180deg,rgba(96,68,40,.94),rgba(60,42,24,.94));
+    border:2px solid #8a6a3e; border-radius:16px; padding:10px 14px 12px; box-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .bar-label { display:flex; justify-content:space-between; font-size:14px; font-weight:800; color:#fff6e2;
+    letter-spacing:.3px; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .bar-label .val { font-variant-numeric:tabular-nums; color:#ffe6a2; }
+  .bar-track { height:15px; border-radius:9px; background:rgba(0,0,0,0.38); overflow:hidden;
+    border:1.5px solid rgba(0,0,0,.3); box-shadow:inset 0 1px 3px rgba(0,0,0,.55); }
+  .bar-fill { height:100%; width:0%; border-radius:9px; transition:width .12s linear; }
+  #reveal-fill { background:linear-gradient(90deg,#e0b24e,#ffe6a2); box-shadow:0 0 8px rgba(255,220,120,.5); }
 
   /* ===== 잘못된 도구 힌트 토스트 ===== */
   #hint {
@@ -465,7 +469,7 @@
     const app = document.getElementById("app");
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     renderer.setPixelRatio(DPR);
-    renderer.setClearColor(0x1a130c, 1);
+    renderer.setClearColor(0xc79a5e, 1);   // 캐주얼: 따뜻한 샌드 배경(구 near-black에서 전환)
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // 톤매핑 완화 + 노출 낮춤: 밝은 뼈는 살리되 흙은 확실히 어둡게 (파리한 톤 제거)
@@ -475,7 +479,7 @@
     app.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x140e08, 60, 130);
+    scene.fog = new THREE.Fog(0xc7a970, 105, 210);   // 캐주얼: 밝은 샌드 포그, 멀리 밀어 옅게
 
     camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
 
@@ -501,9 +505,9 @@
     scene.add(terrain);
 
     // 조명 (벽/파티클용 표준 라이트 — 지형은 셰이더가 자체 라이팅)
-    const hemi = new THREE.HemisphereLight(0xfff0da, 0x2a1c10, 0.55);
+    const hemi = new THREE.HemisphereLight(0xfff4e0, 0x8a6a42, 0.92);   // 캐주얼: 밝은 앰비언트 + 따뜻한 바닥 바운스
     scene.add(hemi);
-    const dir = new THREE.DirectionalLight(0xfff2d6, 1.35);
+    const dir = new THREE.DirectionalLight(0xfff2d6, 1.05);
     dir.position.copy(LIGHT_POS);
     dir.castShadow = true;
     dir.shadow.mapSize.set(1024, 1024);
@@ -544,9 +548,9 @@
         uLightDir: { value: _lightDir },
         uHeightScale: { value: HEIGHT_SCALE },
         uStartDepth: { value: START_DEPTH },
-        fogColor: { value: new THREE.Color(0x140e08) },
-        fogNear: { value: 60.0 },
-        fogFar: { value: 130.0 }
+        fogColor: { value: new THREE.Color(0xc7a970) },
+        fogNear: { value: 105.0 },
+        fogFar: { value: 210.0 }
       },
       vertexColors: true,
       fog: false,
@@ -599,9 +603,9 @@
           vec3 soil = texture2D(uSoil, tuv).rgb;
           vec3 bone = texture2D(uBone, tuv * 0.72).rgb;
 
-          // --- 톤 대비: 흙은 확실히 어둡게(진갈색), 뼈는 크림(밝지만 텍스처 유지) ---
-          // 흙: 감마로 어둠 강조 → 진갈색
-          soil = pow(soil, vec3(1.45)) * 0.82;
+          // --- 톤: 캐주얼(밝고 따뜻한 클레이/샌드). (구 사실적 어두운 진갈색에서 전환 2026-07-02) ---
+          soil = pow(soil, vec3(0.92)) * 1.16;      // 밝게(감마↓+게인↑)
+          soil *= vec3(1.08, 1.0, 0.82);            // 따뜻한 황토/클레이 틴트
           // 뼈: 텍스처를 크림/아이보리로 눌러 화이트아웃 방지 (디테일 보존이 핵심)
           //   원본이 매우 밝은 크림(~0.9)이라 강하게 감마+게인다운해야 미드톤 뼈가 됨.
           bone = pow(bone, vec3(1.55)) * 0.86;
@@ -627,7 +631,7 @@
           vec3 albedo = mix(soil, bone, mixT);
 
           // 파낸 흙 벽(깊이) 그늘: reveal 낮고 파인 곳일수록 어둡게 (깊이 판 느낌)
-          float pitShade = mix(1.0, 0.55, (1.0 - rev) * clamp((uStartDepth - vHeight) / uStartDepth, 0.0, 1.0));
+          float pitShade = mix(1.0, 0.78, (1.0 - rev) * clamp((uStartDepth - vHeight) / uStartDepth, 0.0, 1.0));
           albedo *= pitShade;
 
           // --- 라이팅: 정점 노멀 diffuse + 앰비언트 + 경사 음영(릴리프 강조) ---
@@ -635,9 +639,9 @@
           float ndl = max(dot(n, normalize(uLightDir)), 0.0);
           // 경사도(1=평평, 0=수직벽): 안와/능선 경계면을 어둡게 해 3D 형태를 살림
           float flatness = clamp(n.y, 0.0, 1.0);
-          float slopeShade = 0.55 + 0.45 * flatness;   // 수직면(구멍벽)일수록 어둡게
-          // 직광 대비를 키워 뼈의 융기/함몰이 또렷 (평면부는 여전히 화이트아웃 방지)
-          float diff = 0.40 + 0.60 * ndl;
+          float slopeShade = 0.78 + 0.22 * flatness;   // 캐주얼: 벽 음영 완화(덜 어둡게)
+          // 캐주얼: 앰비언트 크게 → 플랫하고 밝은 소프트 라이팅
+          float diff = 0.68 + 0.36 * ndl;
           vec3 col = albedo * diff * slopeShade;
 
           // rim: 능선 가장자리 살짝 밝게 (뼈 하이라이트)
