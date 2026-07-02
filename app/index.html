@@ -1477,6 +1477,50 @@
     b.addEventListener("click", () => mockMove(b.dataset.dir));
   });
 
+  // 치트 조이스틱(?cheat=1): 드래그 방향/세기로 연속 이동(D패드와 함께). 사용자 2026-07-02.
+  function addCheatJoystick() {
+    if (document.getElementById("cheat-joy")) return;
+    const base = document.createElement("div");
+    base.id = "cheat-joy";
+    base.style.cssText = "position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 120px);z-index:1200;"
+      + "width:120px;height:120px;border-radius:50%;background:rgba(30,20,12,.5);border:2px solid rgba(240,198,116,.55);"
+      + "touch-action:none;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.35);";
+    const nub = document.createElement("div");
+    nub.style.cssText = "position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;"
+      + "background:radial-gradient(circle at 35% 30%,#f7d68a,#8a5a2a);box-shadow:0 3px 9px rgba(0,0,0,.45);pointer-events:none;";
+    base.appendChild(nub); document.body.appendChild(base);
+    const R = 44;               // nub 최대 이동 반경
+    let active = false, cx = 0, cy = 0, vx = 0, vy = 0, raf = 0;
+    const setNub = (x, y) => { nub.style.transform = "translate(" + x + "px," + y + "px)"; };
+    function loop() {
+      if (!active) { raf = 0; return; }
+      if (player.lat != null && (vx || vy)) {
+        // 위로 밀면(vy<0) 북(+dN), 오른쪽(vx>0) 동(+dE). 세기 비례(풀틸트 ≈ 30m/s@60fps).
+        const [nl, ng] = offsetMeters(player.lat, player.lng, -vy * 0.5, vx * 0.5);
+        onPositionUpdate(nl, ng, 5);
+      }
+      raf = requestAnimationFrame(loop);
+    }
+    function move(e) {
+      if (!active) return;
+      let dx = e.clientX - cx, dy = e.clientY - cy;
+      const d = Math.hypot(dx, dy), m = Math.min(1, d / R);
+      if (d > 0) { dx = dx / d * R * m; dy = dy / d * R * m; } else { dx = dy = 0; }
+      setNub(dx, dy); vx = dx / R; vy = dy / R;
+      if (e.cancelable) e.preventDefault();
+    }
+    function end(e) { active = false; vx = vy = 0; setNub(0, 0); try { base.releasePointerCapture(e.pointerId); } catch (_) {} }
+    base.addEventListener("pointerdown", (e) => {
+      active = true; const r = base.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+      try { base.setPointerCapture(e.pointerId); } catch (_) {}
+      move(e); if (!raf) raf = requestAnimationFrame(loop);
+    });
+    base.addEventListener("pointermove", move);
+    base.addEventListener("pointerup", end);
+    base.addEventListener("pointercancel", end);
+  }
+  if (CHEAT) addCheatJoystick();
+
   // ==========================================================================
   // 도감 화면
   // ==========================================================================

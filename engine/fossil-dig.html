@@ -297,31 +297,59 @@
   // 발굴 대상 매설 위치(월드 XZ). 매 발굴마다 제각각 → 찾는 재미(사용자 2026-07-01).
   //  footprint(R)가 필드 안에 들어오도록 마진 두고 랜덤. buildObjTop이 갱신, 모델/리셋이 참조.
   let objCX = 0, objCZ = 0;
+  //  발굴률 = 이 풋프린트(타원) 위 흙 제거율. 실제 모델 크기에 맞춰(작은 물건=작은 영역) → 물건만
+  //  다 드러내면 100%(사용자 2026-07-02: "전체 땅 기준으로 측정돼 헷갈림" 수정). 모델 로드 후 실측.
+  let objRX = OBJ_FOOTPRINT_R, objRZ = OBJ_FOOTPRINT_R;   // 현재 풋프린트 반경(월드)
+  let objModelRX = 0, objModelRZ = 0;                     // 모델 실측 반경(로드 후 세팅, reset도 참조)
   function randomizeObjPos() {
-    const mx = Math.max(0, WORLD_W / 2 - OBJ_FOOTPRINT_R - 0.6);   // ≈3.8
-    const mz = Math.max(0, WORLD_H / 2 - OBJ_FOOTPRINT_R - 0.6);   // ≈7.1
+    const rr = Math.max(objModelRX || OBJ_FOOTPRINT_R, objModelRZ || OBJ_FOOTPRINT_R);
+    const mx = Math.max(0, WORLD_W / 2 - rr - 0.6);
+    const mz = Math.max(0, WORLD_H / 2 - rr - 0.6);
     objCX = (Math.random() * 2 - 1) * mx;
     objCZ = (Math.random() * 2 - 1) * mz;
   }
-  function buildObjTop() {
+  // 타원 풋프린트(objCX,objCZ 중심 · objRX,objRZ 반경) → objTop/isObj/totalObjCols
+  function computeFootprint() {
     objTop.fill(0);
     totalObjCols = 0;
-    randomizeObjPos();                          // 이번 발굴의 매설 위치 결정
     const peak = OBJ_BED_PEAK * START_DEPTH;
-    const EDGE = 1.6;                           // 원반 가장자리 소프트 폭(월드)
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const i = r * COLS + c;
         const x = (c / (COLS - 1) - 0.5) * WORLD_W;
         const z = (r / (ROWS - 1) - 0.5) * WORLD_H;
-        const d = Math.sqrt((x - objCX) * (x - objCX) + (z - objCZ) * (z - objCZ));
-        const m = smooth01((OBJ_FOOTPRINT_R - d) / EDGE);   // 원반 안=1, 가장자리 소프트
+        const nx = (x - objCX) / objRX, nz = (z - objCZ) / objRZ;
+        const dd = Math.sqrt(nx * nx + nz * nz);     // 0 중심 .. 1 가장자리
+        const m = smooth01((1 - dd) / 0.30);         // 소프트 가장자리
         const top = peak * m;
         objTop[i] = top;
         isObj[i] = top > OBJ_MIN ? 1 : 0;
         if (isObj[i]) totalObjCols++;
       }
     }
+  }
+  function buildObjTop() {
+    randomizeObjPos();
+    objRX = objModelRX > 0 ? objModelRX : OBJ_FOOTPRINT_R;   // 모델 실측이 있으면 물건 크기 기준
+    objRZ = objModelRZ > 0 ? objModelRZ : OBJ_FOOTPRINT_R;
+    computeFootprint();
+  }
+  // 모델 로드 후: 실제 모델 XZ 반경으로 풋프린트 재계산(발굴률이 물건 크기에 맞게).
+  function applyModelFootprint(lay) {
+    let hx = 0, hz = 0;
+    try {
+      const b = new THREE.Box3().setFromObject(lay);
+      if (isFinite(b.min.x) && isFinite(b.max.x)) {
+        hx = (b.max.x - b.min.x) / 2; hz = (b.max.z - b.min.z) / 2;
+      }
+    } catch (e) {}
+    const clamp = (v) => Math.max(1.7, Math.min(OBJ_FOOTPRINT_R, v || OBJ_FOOTPRINT_R));
+    objModelRX = clamp(hx * 1.25);   // 약간 여유(주변도 조금 파게)
+    objModelRZ = clamp(hz * 1.25);
+    objRX = objModelRX; objRZ = objModelRZ;
+    computeFootprint();
+    fullSync();
+    updateHUD();
   }
 
   // ── 발굴 대상 실물 3D 모델: 흙 아래 배치 → 파내며 드러남 → 100%면 상승(rise) ──
@@ -420,6 +448,7 @@
         if (isFinite(lb.min.y)) lay.position.y = -lb.min.y;   // 바닥을 grp 원점(bed)에 접지
       }
       grp.add(lay);
+      applyModelFootprint(lay);   // 발굴률을 실제 모델 크기 기준으로(작은 물건=작은 영역)
       // 애니는 기본 OFF: 스키닝 모델(T-Rex)은 rest pose로 렌더해야 fit(rest 기준 bounds)과 일치해
       //  정확히 보인다. 애니 재생은 rest와 포즈가 달라 정렬이 어긋나므로 cfg.animate일 때만.
       if (cfg.animate && gltf.animations && gltf.animations.length) {
@@ -621,18 +650,10 @@
           // 뼈에 살짝 따뜻한 아이보리 톤 (푸른기 제거)
           bone *= vec3(1.02, 0.98, 0.90);
 
-          // --- 층 톤(layer tint): 현재 표면이 속한 층에 따라 흙 색을 살짝 바꿔 "여긴 무슨 도구" 가독 ---
-          //  vLayer: 0=BULK(진갈색, 무보정) · 0.5=MID(회갈 단단층) · 1=FINE(밝은 고운 모래).
-          //  오브젝트 위에서만 층이 갈리므로(비-오브젝트는 항상 0=bulk) 오브젝트 위 표면에 밴드가 보임.
-          float lyr = clamp(vLayer, 0.0, 1.0);
-          // MID: 채도 낮추고 회색기 + 살짝 청회색 (단단한 암반층). FINE: 밝고 따뜻한 고운 모래빛.
-          float g = dot(soil, vec3(0.34, 0.5, 0.16));
-          vec3 midTint  = mix(soil, vec3(g * 0.92, g * 0.94, g * 0.98), 0.60);   // 탈채도+살짝 차갑게
-          vec3 fineTint = soil * vec3(1.85, 1.66, 1.22) + vec3(0.16, 0.135, 0.07);// 밝은 모래빛(확실히 대비)
-          //  0→0.5 : bulk→mid,  0.5→1 : mid→fine (경계 또렷하게 좁은 전이대)
-          vec3 layered = mix(soil, midTint, smoothstep(0.30, 0.55, lyr));
-          layered = mix(layered, fineTint, smoothstep(0.72, 0.98, lyr));
-          soil = layered;
+          // --- 발굴 가이드(2026-07-02): 아직 흙에 덮인 '오브젝트 풋프린트'를 은은한 골드로 표시 →
+          //  "여기 파세요/여기 더 파야 완료". vLayer=덮임정도(1=많이덮임 .. 0=드러남). 파낼수록 사라짐.
+          float hint = clamp(vLayer, 0.0, 1.0);
+          soil = mix(soil, soil * vec3(1.20, 1.07, 0.70) + vec3(0.045, 0.03, 0.0), hint * 0.5);
 
           float rev = clamp(vReveal, 0.0, 1.0);
           // 흙→뼈 전이는 살짝 샤프하게 (걷히는 경계가 또렷)
@@ -740,7 +761,13 @@
   //  → reveal(뼈 크림 블렌드)·layer(층 tint)를 끈다(항상 0). 판 곳은 셰이더 pitShade가
   //    깊이에 따라 어둡게 처리 → 흙 구덩이로 보인다.
   function revealFor(i) { return 0; }
-  function layerFor(i)  { return 0; }
+  // 발굴 가이드: 덮인 오브젝트 셀=골드 힌트(덮임 많을수록 강, 드러나면 0). 셰이더가 표시.
+  function layerFor(i) {
+    if (!isObj[i]) return 0;
+    const cover = soilTop[i] - objTop[i];
+    if (cover <= TOL) return 0;
+    return Math.min(1, (cover - TOL) / (0.32 * START_DEPTH));
+  }
 
   // 전체 초기 반영 (reveal→color.r, layer→color.g, 높이→posAttr Y)
   function fullSync() {
