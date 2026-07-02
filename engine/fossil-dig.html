@@ -421,8 +421,21 @@
         if (cfg.pos) model.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
         else model.position.set(-center.x * s, -box.min.y * s, -center.z * s);
         model.traverse(function (o) {
-          if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
-            if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
+          if (o.isMesh) {
+            o.castShadow = true; o.receiveShadow = false;
+            const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+            for (const mt of mats) {
+              mt.side = THREE.FrontSide;
+              // 낡은/오래된 느낌(사용자 2026-07-02: 오브젝트 너무 깔끔 → 채도↓·살짝 어둡게·거칠게).
+              const c = mt.color;
+              if (c) { const l = 0.3*c.r + 0.59*c.g + 0.11*c.b, k = 0.34;
+                c.setRGB((c.r*(1-k)+l*k)*0.9, (c.g*(1-k)+l*k)*0.9, (c.b*(1-k)+l*k)*0.9); }
+              if ("roughness" in mt) mt.roughness = Math.min(1, (mt.roughness != null ? mt.roughness : 0.6) + 0.3);
+              if ("metalness" in mt) mt.metalness = (mt.metalness != null ? mt.metalness : 0) * 0.4;
+              mt.needsUpdate = true;
+            }
+            o.frustumCulled = false;
+          }
         });
         // 랜덤 매장 자세(사용자 2026-07-02: 항상 90° 말고 뒤집힘/대각선/옆으로 — 현실 네러티브) + 매립 보장.
         //  정적 모델=임의 회전 후 setFromObject로 높이 캡→어떤 자세든 흙에 묻힘. 스키닝=특이라 약한 랜덤 틸트.
