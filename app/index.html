@@ -122,6 +122,12 @@
   .rc-arrow { width:26px; height:26px; padding:0; border:none; background:none; font-family:serif;
     font-size:28px; line-height:1; color:#8a5a24; cursor:pointer; opacity:.9; text-shadow:0 1px 0 rgba(255,247,224,.6); }
   .rc-arrow:active { transform:scale(.88); }
+  /* 화살표를 메모지(카드) 양옆에(사용자 2026-07-02) — 세로 중앙, 카드 가장자리 */
+  .rc-side { position:absolute; top:50%; transform:translateY(-50%); z-index:4; width:44px; height:44px; font-size:40px; opacity:.92; }
+  .rc-side.rc-left { left:-8px; }
+  .rc-side.rc-right { right:-8px; }
+  .rc-side:active { transform:translateY(-50%) scale(.86); }
+  .rc-side.hide { display:none; }
   .rc-dots { display:inline-flex; align-items:center; gap:6px; }
   .rc-dots i { width:7px; height:7px; border-radius:50%; background:#c9a97a; display:inline-block; transition:transform .15s; }
   .rc-dots i.on { background:#8a5a24; transform:scale(1.35); }
@@ -220,11 +226,11 @@
       <div class="rarity-badge" id="r-rarity">흔함</div>
       <div class="meta" id="r-meta"></div>
       <div class="rc-nav" id="rc-nav">
-        <button class="rc-arrow" id="rc-prev" aria-label="이전">‹</button>
         <span class="rc-dots" id="rc-dots"></span>
-        <button class="rc-arrow" id="rc-next" aria-label="다음">›</button>
       </div>
     </div>
+    <button class="rc-arrow rc-side rc-left" id="rc-prev" aria-label="이전">‹</button>
+    <button class="rc-arrow rc-side rc-right" id="rc-next" aria-label="다음">›</button>
     <button id="r-ok">도감에 수집!</button>
   </div>
 </div>
@@ -743,6 +749,8 @@
     // 내비(화살표+점) — 1개면 통째로 숨김
     const multi = n > 1;
     document.getElementById("rc-nav").classList.toggle("hide", !multi);
+    document.getElementById("rc-prev").classList.toggle("hide", !multi);
+    document.getElementById("rc-next").classList.toggle("hide", !multi);
     const dots = document.getElementById("rc-dots");
     dots.innerHTML = "";
     if (multi) for (let i = 0; i < n; i++) { const d = document.createElement("i"); if (i === _rcIdx) d.className = "on"; dots.appendChild(d); }
