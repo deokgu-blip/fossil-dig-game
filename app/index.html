@@ -55,10 +55,8 @@
   @keyframes spinPulse { 0%,100%{ transform:scale(1) translateY(0);} 50%{ transform:scale(1.12) translateY(-2px);} }
 
   /* 하단 발견 버튼 */
-  #discover-bar { position:fixed; left:0; right:0; bottom:0; z-index:1000;
-    padding:14px 18px calc(env(safe-area-inset-bottom,0px) + 18px);
-    display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;
-    background:linear-gradient(0deg,rgba(20,14,8,.85),rgba(20,14,8,0)); }
+  /* 하단 발견 UI 제거(사용자 2026-07-02): 지도의 발굴 지점 핀을 직접 탭해 발굴 진입. */
+  #discover-bar { display:none !important; }
   #discover-btn { pointer-events:auto; width:100%; max-width:400px; aspect-ratio:512/224;
     background:url(../assets/ui/btn_discover.webp) center/100% 100% no-repeat; color:#5a3410; border:none;
     padding:0 0 6px; font-size:22px; font-weight:900; letter-spacing:.3px;
@@ -736,10 +734,8 @@
   function onSpotTap(id) {
     const s = spots.find(x => x.id === id);
     if (!s) return;
-    // 근접(발견 반경) 이내면 바로 발굴, 아니면 안내
-    const d = player.lat!=null ? haversine(player.lat, player.lng, s.lat, s.lng) : Infinity;
-    if (d <= DISCOVER_RADIUS_M) openDig(s.item, s);
-    else toast("가까이 가야 발굴할 수 있어요 · " + Math.round(d) + "m", 1800);
+    // 사용자 2026-07-02: 좌표(핀)를 탭하면 바로 발굴 모드 진입(근접 게이트 없음, 하단 발견버튼 제거).
+    openDig(s.item, s);
   }
   function consumeSpot(spot) {
     if (!spot) return;
@@ -1697,9 +1693,17 @@
       return best ? { id:best.id, item:best.item } : null;
     },
     nearestInRange: () => nearestInRange ? { id:nearestInRange.id, item:nearestInRange.item } : null,
-    discoverVisible: () => document.getElementById("discover-btn").classList.contains("show"),
-    // 발견 버튼 클릭 (발굴게임 오버레이 오픈)
-    clickDiscover: () => { document.getElementById("discover-btn").click(); return activeSpot ? activeSpot.id : null; },
+    // 하단 발견버튼 제거(2026-07-02) → 탭 가능한 발굴 지점 존재 여부로 대체.
+    discoverVisible: () => spots.length > 0,
+    // 발굴 진입 = 가장 가까운 지점 핀 탭 (onSpotTap → openDig).
+    clickDiscover: () => {
+      if (!spots.length) return null;
+      let best = spots[0], bd = Infinity;
+      if (player.lat != null) for (const s of spots) { const d = haversine(player.lat, player.lng, s.lat, s.lng); if (d < bd) { bd = d; best = s; } }
+      onSpotTap(best.id);
+      return activeSpot ? activeSpot.id : null;
+    },
+    tapSpot: (id) => { onSpotTap(id); return activeSpot ? activeSpot.id : null; },
     activeSpot: () => activeSpot ? { id:activeSpot.id, item:activeSpot.item } : null,
     digFrame: () => document.getElementById("dig-frame"),
     digOverlayOpen: () => document.getElementById("dig-overlay").classList.contains("show"),

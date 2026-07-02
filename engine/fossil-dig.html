@@ -189,7 +189,7 @@
     //  boneTransform으로 측정한 '실제 포즈 bbox'를 하드코딩(posedBox)해 정확히 fit·정렬. animate로 idle.
     dino:{file:"dino.glb", animate:false, posedBox:{ sz:[7.96,14.68,30.88], c:[0,7.25,-1.0], minY:-0.09 }, layY:0.2},
     // velociraptor: 스키닝+양자화 + 리깅 특이로 posed-box 측정 불가 → 명시 fitScale·pos(육안 튜닝).
-    velociraptor:{file:"velociraptor.glb", animate:false, fitScale:0.9, pos:[0,0,0], layY:0.2},
+    velociraptor:{file:"velociraptor.glb", animate:false, fitScale:0.55, pos:[0,0,0], layY:0.2, layCap:5.0},
     chest:{file:"chest.glb"}, goldbag:{file:"goldbag.glb"}
   };
   // 구 regions.json obj키 → 신 모델 키 (loot 재구성 전 호환용 폴백)
@@ -396,19 +396,27 @@
         if (o.isMesh) { o.castShadow = true; o.receiveShadow = false;
           if (o.material) { o.material.side = THREE.FrontSide; o.frustumCulled = false; } }
       });
-      // ── 눕히기(발굴 자세): 세워두면 어색 → 옆으로 뉘어 땅에 묻힌 듯(사용자 2026-07-01) ──
-      //  lay 그룹을 X축 -90° 회전해 Y-up 모델을 바닥에 눕히고, 최저점을 bed(grp 원점)에 접지.
+      // ── 눕히기 + 매립 보장 (사용자 2026-07-01 눕히기 / 07-02 매립버그 수정) ──
+      //  '높이가 최장축'인 세워진 물건만 눕힌다(차량·동전 등 이미 납작한 건 세우지 않음).
+      //  눕힌/세운 실제 높이가 매립 천장(흙 표면 아래)을 넘으면 축소 → 0%에서 땅 위로 안 삐져나옴.
+      const ceil = HEIGHT_SCALE * START_DEPTH - OBJ_BASE_Y - 0.55;   // 매립 천장(월드 Y)
+      const isTall = (size.y >= size.x && size.y >= size.z && size.y < 1e4);  // 높이 최장(스키닝 garbage 제외)
       const lay = new THREE.Group();
-      lay.rotation.x = -Math.PI / 2;
-      lay.rotation.z = OBJ_LAY_TILT;
+      if (isTall) { lay.rotation.x = -Math.PI / 2; lay.rotation.z = OBJ_LAY_TILT; }   // 세워진 것 → 눕힘
+      else { lay.rotation.z = OBJ_LAY_TILT * 0.5; }                                    // 이미 납작 → 살짝 기울임만
       lay.add(model);
-      lay.updateWorldMatrix(true, true);   // 독립 상태(부모 없음)에서 회전 반영
+      lay.updateWorldMatrix(true, true);
       if (cfg.posedBox || cfg.fitScale) {
-        // 스키닝: setFromObject bind-pose 부정확 → 수동 y(육안 튜닝, 기본 살짝 띄움)
+        // 스키닝: bind-pose bbox 부정확 → posedBox로 실제 세로높이 추정해 캡(없으면 cfg.layCap).
+        let laidH = cfg.layCap != null ? cfg.layCap : 0;
+        if (cfg.posedBox) laidH = (isTall ? cfg.posedBox.sz[2] : cfg.posedBox.sz[1]) * s;
+        if (laidH > ceil) lay.scale.setScalar(ceil / laidH);
         lay.position.y = (cfg.layY != null ? cfg.layY : 0.3);
       } else {
-        const lb = new THREE.Box3().setFromObject(lay);   // 눕힌 실제 bbox
-        if (isFinite(lb.min.y)) lay.position.y = -lb.min.y;   // 바닥을 grp 원점(bed)에
+        let lb = new THREE.Box3().setFromObject(lay);       // 눕힌 실제 bbox
+        const laidH = (lb.max.y - lb.min.y) || 1;
+        if (laidH > ceil) { lay.scale.setScalar(ceil / laidH); lb = new THREE.Box3().setFromObject(lay); }
+        if (isFinite(lb.min.y)) lay.position.y = -lb.min.y;   // 바닥을 grp 원점(bed)에 접지
       }
       grp.add(lay);
       // 애니는 기본 OFF: 스키닝 모델(T-Rex)은 rest pose로 렌더해야 fit(rest 기준 bounds)과 일치해
